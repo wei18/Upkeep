@@ -1,34 +1,74 @@
 # upkeep
 
-可重用的 GitHub Workflow（`on: workflow_call`）。掃描 repo，分派一組各有專業的 subagent reviewer，檢查 code / 文件 / spec / 視覺圖 / icon / flow 等是否 up-to-date、符合 repo 自身規範、有無重複檔與孤兒檔，產出 HTML 報告（artifact）＋ tracking issue。設計細節見 [`docs/design.md`](docs/design.md)。
+A reusable GitHub Actions workflow that keeps your repo's docs, specs, and assets honest — catching drift before it compounds.
 
-## 用法
+## What it does
 
-在你的 repo 建立 `.github/workflows/audit.yml`：
+- Scans a repository and dispatches a team of **focused AI reviewers** (powered by Anthropic's `claude-code-action`) in parallel.
+- Catches stale docs that drifted from code, specs that no longer match implementation, duplicate or orphaned files, convention violations, and out-of-sync translated docs.
+- **Reports divergence with evidence** — it does not assume one artifact is always the source of truth.
+- **Never edits or deletes anything** — output only.
+- Produces a self-contained **HTML report** (workflow artifact) and a **persistent GitHub tracking issue** (upserted, never duplicated).
+
+## Usage
+
+Create `.github/workflows/audit.yml` in your repo:
 
 ```yaml
 name: repo audit
 on:
   schedule:
-    - cron: '0 3 * * 1'   # 每週一 03:00 UTC 全掃
-  workflow_dispatch:       # 也可手動觸發
+    - cron: '0 3 * * 1'   # weekly, Monday 03:00 UTC
+  workflow_dispatch:        # also run manually
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   audit:
     uses: wei18/upkeep/.github/workflows/audit.yml@v1
     with:
-      model: claude-opus-4-8     # 可選
-      issue_label: audit         # 可選；預設 audit
+      model: claude-opus-4-8     # optional
+      issue_label: audit         # optional; default: audit
     secrets:
       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-需求：
-- repo secret `ANTHROPIC_API_KEY`。
-- 預設權限已含 `contents: read` + `issues: write`（workflow 自帶）。
+**Requirements**
 
-產出：
-- 一個帶標籤 `audit` 的 tracking issue（每次 run upsert 同一個）。
-- 一份 self-contained HTML 報告，存在該次 workflow run 的 artifacts（`report-html`）。
+- A repo secret named `ANTHROPIC_API_KEY`.
+- The `permissions` block shown above (`contents: read` + `issues: write`).
 
-可選設定檔 `.claude/audit.yml`（全可選）見 [`docs/design.md`](docs/design.md) §5。
+**Outputs**
+
+- A GitHub issue labeled `audit` — the same issue is updated on every run (upserted), not duplicated.
+- A self-contained HTML report uploaded as the `report-html` workflow artifact.
+
+## Reviewers
+
+| Name | Default | Checks |
+|---|---|---|
+| `docs_staleness` | on | Docs that drifted from code; out-of-sync multilingual READMEs and translated docs |
+| `code_hygiene` | on | Dead code, unused exports, commented-out blocks left in permanently |
+| `spec_flow` | on | Specs, diagrams, and flow charts that no longer match the implementation |
+| `visual_icon` | on | Outdated or mismatched images and icons |
+| `duplicate_orphan` | on | Duplicate files and orphaned/unreferenced assets |
+| `convention` | on | Violations of the repo's own conventions (CLAUDE.md, `.claude/skills`, workflows) |
+| `i18n` | **off** | Internationalization consistency across locale files |
+
+## Configuration
+
+All configuration is optional — zero setup required beyond the caller workflow above. To enable or tune reviewers, create `.claude/audit.yml`; see [`docs/design.md`](docs/design.md) for the full schema and options.
+
+## Docs
+
+- [`docs/overview.md`](docs/overview.md) — how the pipeline works
+- [`docs/design.md`](docs/design.md) — full design reference
+
+## Translated READMEs
+
+- [繁體中文](README.zh-TW.md)
+- [简体中文](README.zh-CN.md)
+- [日本語](README.ja.md)
+- [한국어](README.ko.md)
