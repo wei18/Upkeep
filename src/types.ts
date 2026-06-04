@@ -84,3 +84,37 @@ export interface ReviewerOutput {
   status: 'ok' | 'failed';  // failed 時 findings 必為空
   findings: Finding[];
 }
+
+export interface Theme {
+  title: string;
+  narrative: string;
+  related_files: string[];   // 此主題涵蓋的檔路徑
+  priority: Severity;
+}
+
+export interface SynthesisOutput {
+  themes: Theme[];
+  semantic_duplicates: string[][]; // 每組為 "reviewer|file|category" 鍵
+  executive_summary: string;
+  status: 'ok' | 'failed';         // failed 時 themes 必為空
+}
+
+export interface ConsolidatedFinding extends Finding {
+  reviewers: ReviewerName[];       // 回報此 file+category 的所有 reviewer（聯集）
+}
+
+export interface ReportStats {
+  total: number;
+  bySeverity: Record<Severity, number>;
+  byReviewer: Partial<Record<ReviewerName, number>>;
+  failedReviewers: ReviewerName[];
+}
+
+export interface ConsolidatedReport {
+  generatedAtISO: string;
+  findings: ConsolidatedFinding[];
+  themes: Theme[];
+  executiveSummary: string;
+  synthesisStatus: 'ok' | 'failed' | 'absent';
+  stats: ReportStats;
+}
