@@ -52,3 +52,35 @@ export interface Inventory {
 }
 
 export const MAX_FILE_KB = 100;
+
+export type Confidence = 'low' | 'medium' | 'high';
+
+export type FindingCategory =
+  | 'staleness'
+  | 'duplicate'
+  | 'orphan'
+  | 'convention'
+  | 'inconsistency'
+  | 'i18n_sync'
+  | 'other';
+
+export type SsotDirection = 'stale_a' | 'stale_b' | 'uncertain' | 'n/a';
+
+export interface Finding {
+  file: string;            // 主體檔（跨檔問題放主檔）
+  related: string[];       // 關聯檔（可空陣列）
+  reviewer: ReviewerName;
+  category: FindingCategory;
+  problem: string;
+  evidence: string;
+  suggestion: string;
+  severity: Severity;
+  confidence: Confidence;
+  ssot_direction: SsotDirection;
+}
+
+export interface ReviewerOutput {
+  reviewer: ReviewerName;
+  status: 'ok' | 'failed';  // failed 時 findings 必為空
+  findings: Finding[];
+}
