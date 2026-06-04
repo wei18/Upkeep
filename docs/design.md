@@ -72,7 +72,7 @@
 
 | Reviewer | 範圍 | 主要抓的問題 | 預設 |
 |---|---|---|---|
-| `docs_staleness` | README、文件、註解 | 內容陳舊、與 code 漂移、過期連結 | on |
+| `docs_staleness` | README、文件、註解、**多語 README/doc 變體** | 內容陳舊、與 code 漂移、過期連結、**多語版本與 base 不同步** | on |
 | `code_hygiene` | 原始碼 | 死碼、用不到的檔/函式、與 spec 不符 | on |
 | `spec_flow` | spec、流程圖、狀態機 | flow 與實作不一致、spec 過時 | on |
 | `visual_icon` | 圖片、icon、設計稿 | 未使用素材、重複圖、尺寸/命名不符規範 | on |
@@ -92,6 +92,17 @@
 ```
 
 repo 有自己的標準時優先用 repo 的。`convention` 幾乎全靠 repo 自身規範；`visual_icon` 多靠內建預設＋repo 設計規範（若有）。
+
+### 2.1 多語文件同步偵測（multilingual doc-set）
+
+由 `docs_staleness` 負責（非 `i18n`——`i18n` 管 code 層在地化字串如 `.lproj`/`Localizable.strings`；文件翻譯漂移屬 doc 範疇）。
+
+- **檔名約定**：`<name>.<locale>.md`（如 `README.zh-TW.md`）；無 locale 後綴者為 **base**（`README.md`）。
+- **base 語言**：`en`。
+- **支援語言（最多 6）**：`en`(base)、`zh-TW`、`zh-CN`、`ja`、`ko`（預留第 6）。
+- **偵測**：以 base 為對照，對每個翻譯變體報「落後/缺漏/過時」。沿用 §3 原則——附證據（git 近期度：base 改了但某翻譯沒跟），不預設「翻譯一定是該更新的那方」，但 base 較新時通常傾向翻譯落後。
+- **分組**：reviewer 由檔名解析 locale 並分組（確定性字串處理，Plan 2 reviewer 層完成；Discovery 不需改）。
+- **Dogfood**：本 repo 自身 README 亦多語化（`README.md` + `README.zh-TW.md`/`README.zh-CN.md`/`README.ja.md`/`README.ko.md`），同時作為此能力的真實測試樣本（見 §10）。建立時機：對應 reviewer 能力落地時（Plan 2/4），避免提前翻譯後反而先漂移。
 
 ---
 
