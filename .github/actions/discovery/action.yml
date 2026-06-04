@@ -1,0 +1,31 @@
+name: upkeep discovery
+description: Scan the target repo into inventory.json and emit the enabled-reviewer matrix list.
+inputs:
+  target:
+    description: Path to the repo to audit
+    default: '.'
+outputs:
+  reviewers:
+    description: JSON array of enabled reviewer names
+    value: ${{ steps.scan.outputs.reviewers }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: install upkeep deps
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../..
+      run: npm ci
+    - id: scan
+      shell: bash
+      run: |
+        set -euo pipefail
+        ROOT="${{ github.action_path }}/../../.."
+        node --import tsx "$ROOT/src/discovery.ts" "${{ inputs.target }}" "${{ inputs.target }}/inventory.json"
+        node --import tsx "$ROOT/src/matrix.ts" "${{ inputs.target }}" "$GITHUB_OUTPUT"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: inventory
+        path: ${{ inputs.target }}/inventory.json

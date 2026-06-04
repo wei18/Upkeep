@@ -1,0 +1,57 @@
+name: upkeep report
+description: Consolidate findings + synthesis into HTML (artifact) and upsert a tracking issue.
+inputs:
+  target:
+    default: '.'
+  issue_label:
+    default: audit
+  github_token:
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: install upkeep deps
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../..
+      run: npm ci
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: findings-*
+        path: ${{ inputs.target }}
+        merge-multiple: true
+    - uses: actions/download-artifact@v4
+      with:
+        name: synthesis
+        path: ${{ inputs.target }}
+      continue-on-error: true
+    - name: render report
+      shell: bash
+      run: |
+        set -euo pipefail
+        ROOT="${{ github.action_path }}/../../.."
+        SYN="${{ inputs.target }}/synthesis.json"
+        [ -f "$SYN" ] || SYN="-"
+        node --import tsx "$ROOT/src/report.ts" \
+          "${{ inputs.target }}/findings" "$SYN" \
+          "${{ runner.temp }}/report.html" "${{ runner.temp }}/issue.md"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: report-html
+        path: ${{ runner.temp }}/report.html
+    - name: upsert tracking issue
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        set -euo pipefail
+        ROOT="${{ github.action_path }}/../../.."
+        gh issue list --state open --label "${{ inputs.issue_label }}" --json number,body > "${{ runner.temp }}/issues.json" || echo '[]' > "${{ runner.temp }}/issues.json"
+        NUM="$(node --import tsx "$ROOT/src/find-issue.ts" "${{ runner.temp }}/issues.json")"
+        if [ -n "$NUM" ]; then
+          gh issue edit "$NUM" --body-file "${{ runner.temp }}/issue.md"
+        else
+          gh issue create --title "🔍 Upkeep Report" --label "${{ inputs.issue_label }}" --body-file "${{ runner.temp }}/issue.md"
+        fi

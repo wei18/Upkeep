@@ -1,0 +1,58 @@
+name: upkeep reviewer
+description: Run one reviewer via claude-code-action, producing findings/<reviewer>.json (with failed fallback).
+inputs:
+  reviewer:
+    description: Reviewer name
+    required: true
+  target:
+    description: Path to the repo being audited
+    default: '.'
+  model:
+    default: claude-opus-4-8
+  max_turns:
+    default: '15'
+  anthropic_api_key:
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: install upkeep deps
+      shell: bash
+      working-directory: ${{ github.action_path }}/../../..
+      run: npm ci
+    - uses: actions/download-artifact@v4
+      with:
+        name: inventory
+        path: ${{ inputs.target }}
+    - name: build reviewer prompt
+      shell: bash
+      run: |
+        set -euo pipefail
+        ROOT="${{ github.action_path }}/../../.."
+        mkdir -p "${{ inputs.target }}/findings"
+        node --import tsx "$ROOT/src/prompt-bundle.ts" \
+          "${{ inputs.reviewer }}" "${{ inputs.target }}/inventory.json" "${{ runner.temp }}/reviewer-prompt.txt"
+    - uses: anthropics/claude-code-action@v1
+      continue-on-error: true
+      with:
+        prompt: |
+          Read the file ${{ runner.temp }}/reviewer-prompt.txt and follow its instructions exactly.
+          Produce findings/${{ inputs.reviewer }}.json in the repository root, conforming to the JSON contract in that prompt.
+        claude_args: --allowedTools Read,Write,Glob,Grep --max-turns ${{ inputs.max_turns }} --model ${{ inputs.model }}
+        anthropic_api_key: ${{ inputs.anthropic_api_key }}
+    - name: finalize findings (fallback to failed if missing/invalid)
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        ROOT="${{ github.action_path }}/../../.."
+        node --import tsx "$ROOT/src/finalize.ts" reviewer "${{ inputs.reviewer }}" "${{ inputs.target }}/findings/${{ inputs.reviewer }}.json"
+    - name: upload findings
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: findings-${{ inputs.reviewer }}
+        path: ${{ inputs.target }}/findings/${{ inputs.reviewer }}.json
