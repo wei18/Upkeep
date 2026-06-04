@@ -1,0 +1,30 @@
+{
+  "reviewer": "docs_staleness",
+  "status": "ok",
+  "findings": [
+    {
+      "file": "README.md",
+      "related": ["package.json"],
+      "reviewer": "docs_staleness",
+      "category": "staleness",
+      "problem": "README 的 Getting Started 用 `npm start`，但 package.json 沒有 start script。",
+      "evidence": "package.json scripts 僅有 build/test/discovery；README 最後 commit 2025-11，package.json 2026-05 改過。",
+      "suggestion": "README 較舊，建議把 `npm start` 改為實際可用的指令。",
+      "severity": "medium",
+      "confidence": "high",
+      "ssot_direction": "stale_a"
+    },
+    {
+      "file": "README.zh-TW.md",
+      "related": ["README.md"],
+      "reviewer": "docs_staleness",
+      "category": "i18n_sync",
+      "problem": "zh-TW 版缺少 base(en) 於近期新增的 Configuration 章節。",
+      "evidence": "README.md 含 ## Configuration；README.zh-TW.md 無對應章節，且 base 該段 2026-05 才加入。",
+      "suggestion": "補譯 Configuration 章節到 zh-TW 版。",
+      "severity": "low",
+      "confidence": "medium",
+      "ssot_direction": "stale_b"
+    }
+  ]
+}
