@@ -27,11 +27,13 @@ export function classify(path: string, content: Buffer): { modality: Modality; c
   else modality = 'text';
 
   // category
+  const segs = lower.split('/');
+  const isSpecPath = segs.some((s) => s === 'spec' || s === 'specs');
   let category: Category;
-  if (lower.includes('icon') || ext === '.icns' || ext === '.ico') category = 'icon';
+  if (name.includes('icon') || ext === '.icns' || ext === '.ico') category = 'icon';
   else if (modality === 'raster_image') category = 'visual';
-  else if (lower.includes('spec')) category = 'spec';
-  else if (modality === 'vector_diagram' || name.includes('flow')) category = 'flow';
+  else if (isSpecPath) category = 'spec'; // 路徑含 spec/specs 區段；避免 *.spec.ts 誤判
+  else if (modality === 'vector_diagram' || /(?:^|[-_])flow(?:[-_.]|$)/.test(name)) category = 'flow';
   else if (CODE.has(ext)) category = 'code';
   else if (DOC.has(ext)) category = 'doc';
   else if (CONFIG.has(ext)) category = 'config';

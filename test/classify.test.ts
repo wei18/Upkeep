@@ -30,4 +30,14 @@ describe('classify', () => {
   it('binary content with NUL byte', () => {
     expect(classify('data.bin', Buffer.from([1, 0, 2])).modality).toBe('binary');
   });
+  it('test file with .spec. suffix is code, not spec', () => {
+    expect(classify('src/auth.spec.ts', txt('test()')).category).toBe('code');
+  });
+  it('"flow" as a word-internal substring is not flow category', () => {
+    expect(classify('src/overflow.ts', txt('x')).category).toBe('code');
+    expect(classify('docs/workflow.md', txt('x')).category).toBe('doc');
+  });
+  it('"icon" in a directory name does not make a file an icon', () => {
+    expect(classify('src/iconography/util.ts', txt('x')).category).toBe('code');
+  });
 });
