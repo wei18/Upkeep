@@ -28,8 +28,14 @@ function globToRegex(glob: string): RegExp {
   for (let i = 0; i < glob.length; i++) {
     const c = glob[i];
     if (c === '*') {
-      if (glob[i + 1] === '*') { re += '.*'; i++; if (glob[i + 1] === '/') i++; }
-      else re += '[^/]*';
+      if (glob[i + 1] === '*') {
+        i++;
+        // `**/` 應錨在路徑區段邊界（含零段），避免 `**/README.md` 誤中 `xREADME.md`
+        if (glob[i + 1] === '/') { re += '(?:.*/)?'; i++; }
+        else re += '.*';
+      } else {
+        re += '[^/]*';
+      }
     } else if (c === '?') {
       re += '[^/]';
     } else {

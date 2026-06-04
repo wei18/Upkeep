@@ -31,6 +31,13 @@ describe('composeRubric paths glob override', () => {
     expect(composeRubric('docs_staleness', i, '/a').targetFiles.sort()).toEqual(['a/b/c.svg', 'top.svg']);
   });
 
+  it('**/<name> anchors at a path-segment boundary (no mid-segment match)', () => {
+    const cfg = defaultConfig();
+    cfg.reviewers.docs_staleness.paths = ['**/README.md'];
+    const i = inv([file('README.md', 'doc'), file('a/b/README.md', 'doc'), file('xREADME.md', 'doc')], cfg);
+    expect(composeRubric('docs_staleness', i, '/a').targetFiles.sort()).toEqual(['README.md', 'a/b/README.md']);
+  });
+
   it('falls back to category domain when paths empty/absent', () => {
     const i = inv([file('README.md', 'doc'), file('a.ts', 'code')]);
     expect(composeRubric('docs_staleness', i, '/a').targetFiles).toEqual(['README.md']);
