@@ -1,0 +1,69 @@
+name: upkeep audit
+on:
+  workflow_call:
+    inputs:
+      model:
+        type: string
+        default: claude-opus-4-8
+      max_turns:
+        type: string
+        default: '15'
+      issue_label:
+        type: string
+        default: audit
+    secrets:
+      anthropic_api_key:
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  discovery:
+    runs-on: ubuntu-latest
+    outputs:
+      reviewers: ${{ steps.d.outputs.reviewers }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        uses: wei18/upkeep/.github/actions/discovery@v1
+
+  review:
+    needs: discovery
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        reviewer: ${{ fromJSON(needs.discovery.outputs.reviewers) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wei18/upkeep/.github/actions/reviewer@v1
+        with:
+          reviewer: ${{ matrix.reviewer }}
+          model: ${{ inputs.model }}
+          max_turns: ${{ inputs.max_turns }}
+          anthropic_api_key: ${{ secrets.anthropic_api_key }}
+
+  synthesis:
+    needs: review
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wei18/upkeep/.github/actions/synthesis@v1
+        with:
+          model: ${{ inputs.model }}
+          max_turns: ${{ inputs.max_turns }}
+          anthropic_api_key: ${{ secrets.anthropic_api_key }}
+
+  report:
+    needs: synthesis
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wei18/upkeep/.github/actions/report@v1
+        with:
+          issue_label: ${{ inputs.issue_label }}
+          github_token: ${{ github.token }}
