@@ -9,7 +9,7 @@
 
 ## 0. 目標
 
-一個**可重用的 GitHub Action（composite）**，任何 repo 可 `uses:` 引用。它掃描 repo 內容，分派一組各有專業的 subagent reviewer，檢查資料（code / doc / spec / 視覺圖 / icon / flow 等）是否：
+一個**可重用 GitHub Workflow（`on: workflow_call`）**，任何 repo 在自己的 workflow 以 job-level `uses: wei18/upkeep/.github/workflows/audit.yml@v1` 引用。它掃描 repo 內容，分派一組各有專業的 subagent reviewer，檢查資料（code / doc / spec / 視覺圖 / icon / flow 等）是否：
 
 - up-to-date（與真實程式碼/近期 commit 是否漂移）
 - 符合 repo **自身**的規範
@@ -24,9 +24,10 @@
 
 ## 1. 架構與執行流程
 
-形態：composite GitHub Action（`action.yml`），內部以官方 `claude-code-action` 為 LLM 引擎。需要呼叫方提供 `ANTHROPIC_API_KEY` secret。
+形態：**可重用 workflow**（`.github/workflows/audit.yml`，`on: workflow_call`），內部以官方 `claude-code-action` 為 LLM 引擎。需要呼叫方提供 `ANTHROPIC_API_KEY` secret（`secrets: inherit` 或顯式傳入）。
+> 為何不是 composite action：composite action 是單一 job 的 step 序列，**不能用 `strategy.matrix`**；matrix（每 reviewer 一個平行 job）只能在 workflow job 層做，故採 reusable workflow（已查 GitHub 官方文件確認）。
 
-**編排模型：fan-out → reduce（matrix + synthesis），無 LLM lead。** 每個啟用的 reviewer 各跑一個獨立 `claude-code-action` step（GHA matrix，原生平行、失敗隔離），各自輸出結構化 findings；之後一個 synthesis step（單一 LLM）讀全部 findings 做語意級跨 reviewer 關聯。不依賴「單 run 內 spawn subagent」（該能力雖經實證可行，但 per-step 在確定性/隔離/零殘留風險上更佳）。
+**編排模型：fan-out → reduce（matrix + synthesis），無 LLM lead。** 每個啟用的 reviewer 各跑一個獨立 matrix **job**（內含一個 `claude-code-action` step；`fail-fast: false` + `continue-on-error` 做失敗隔離），各自輸出結構化 findings；之後一個 synthesis job（單一 LLM）讀全部 findings 做語意級跨 reviewer 關聯。不依賴「單 run 內 spawn subagent」（該能力雖經實證可行，但 per-job 在確定性/隔離/零殘留風險上更佳）。
 
 觸發：`schedule`（cron 定期全掃）＋ `workflow_dispatch`（手動，可帶範圍參數）。
 > 「重複檔 / 孤兒檔 / 全域 up-to-date」需要全域視角，PR 增量做不到，故以全掃為主。
@@ -205,13 +206,18 @@ report:
 
 ```
 repo-audit-action/                   # 本地目錄（發佈名 upkeep）
-├── action.yml                       # composite action 進入點
-├── README.md                        # 用法（uses: 範例、需要的 secret/權限）
+├── .github/
+│   ├── workflows/audit.yml          # 可重用 workflow（on: workflow_call）：jobs/matrix 編排
+│   └── actions/                     # composite 子 action（被 workflow 的 job uses，自帶 upkeep 程式碼）
+│       ├── discovery/  reviewer/  synthesis/  report/
+├── README.md                        # 用法（job-level uses: 範例、secret/權限）
 ├── docs/design.md                   # 本 spec（living document）
-├── reviewers/                       # 7 位內建 reviewer 的預設 rubric
-├── scripts/                         # Discovery / Consolidate / Report 確定性骨架
+├── reviewers/                       # 7 位內建 reviewer rubric + _reviewer-prompt + _synthesis-prompt
+├── src/                             # discovery/consolidate/report/matrix/prompt-bundle 等確定性 TS
 └── test/                            # 單元 + 契約 + e2e（樣本見 §10）
 ```
+
+> 子 action 機制：reusable workflow 的 job 跑在**呼叫方**的 checkout；upkeep 自身程式碼（src/、reviewers/）透過 `uses: wei18/upkeep/.github/actions/<x>@v1` 帶入（GitHub 自動抓 upkeep repo）。每個 reviewer 是獨立 matrix job 跑一個 plain `claude-code-action` prompt（寫 `findings/<reviewer>.json`），**不需 in-run subagent**，故 `--agents`/`Agent` passthrough 風險消失。
 
 ---
 
