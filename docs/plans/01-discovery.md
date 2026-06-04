@@ -344,6 +344,16 @@ describe('classify', () => {
   it('binary content with NUL byte', () => {
     expect(classify('data.bin', Buffer.from([1, 0, 2])).modality).toBe('binary');
   });
+  it('test file with .spec. suffix is code, not spec', () => {
+    expect(classify('src/auth.spec.ts', txt('test()')).category).toBe('code');
+  });
+  it('"flow" as a word-internal substring is not flow category', () => {
+    expect(classify('src/overflow.ts', txt('x')).category).toBe('code');
+    expect(classify('docs/workflow.md', txt('x')).category).toBe('doc');
+  });
+  it('"icon" in a directory name does not make a file an icon', () => {
+    expect(classify('src/iconography/util.ts', txt('x')).category).toBe('code');
+  });
 });
 ```
 
@@ -385,10 +395,12 @@ export function classify(path: string, content: Buffer): { modality: Modality; c
 
   // category
   let category: Category;
-  if (lower.includes('icon') || ext === '.icns' || ext === '.ico') category = 'icon';
+  const segs = lower.split('/');
+  const isSpecPath = segs.some((s) => s === 'spec' || s === 'specs');
+  if (name.includes('icon') || ext === '.icns' || ext === '.ico') category = 'icon';
   else if (modality === 'raster_image') category = 'visual';
-  else if (lower.includes('spec')) category = 'spec'; // spec 先於 flow：docs/spec/flow.md → spec
-  else if (modality === 'vector_diagram' || name.includes('flow')) category = 'flow';
+  else if (isSpecPath) category = 'spec'; // 路徑含 spec/specs 區段；避免 *.spec.ts 誤判
+  else if (modality === 'vector_diagram' || /(?:^|[-_])flow(?:[-_.]|$)/.test(name)) category = 'flow';
   else if (CODE.has(ext)) category = 'code';
   else if (DOC.has(ext)) category = 'doc';
   else if (CONFIG.has(ext)) category = 'config';
@@ -401,7 +413,7 @@ export function classify(path: string, content: Buffer): { modality: Modality; c
 - [ ] **Step 4: 跑測試確認通過**
 
 Run: `npx vitest run test/classify.test.ts`
-Expected: PASS（7 tests）。
+Expected: PASS（10 tests）。
 
 - [ ] **Step 5: Commit**
 
@@ -795,7 +807,7 @@ Expected: FAIL。
 
 ```ts
 // src/discovery.ts
-import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadConfig } from './config.js';
 import { classify } from './classify.js';
@@ -806,15 +818,15 @@ import { buildRefGraph } from './refgraph.js';
 import { MAX_FILE_KB } from './types.js';
 import type { Inventory, FileEntry, ConventionSource } from './types.js';
 
-function discoverConventions(repoRoot: string): ConventionSource[] {
+function discoverConventions(repoRoot: string, paths: string[]): ConventionSource[] {
   const out: ConventionSource[] = [];
   const add = (rel: string, kind: ConventionSource['kind']) => {
     if (existsSync(join(repoRoot, rel))) out.push({ path: rel, kind });
   };
   add('CLAUDE.md', 'claude_md');
   add('.claude/audit.yml', 'audit_yml');
-  // 目錄型來源用 git ls-files 前綴過濾
-  for (const f of listFiles(repoRoot)) {
+  // 目錄型來源從已列出的 paths 前綴過濾（重用，不再呼叫一次 git ls-files）
+  for (const f of paths) {
     if (f.startsWith('.claude/skills/')) out.push({ path: f, kind: 'skill' });
     else if (f.startsWith('.claude/workflows/')) out.push({ path: f, kind: 'workflow' });
     else if (f.startsWith('.github/workflows/')) out.push({ path: f, kind: 'gha_workflow' });
@@ -836,7 +848,7 @@ export function discover(repoRoot: string): Inventory {
   const graph = buildRefGraph(raw.map((r) => ({ path: r.path, modality: r.modality, content: r.content })));
 
   const files: FileEntry[] = raw.map((r) => {
-    const sizeBytes = statSync(join(repoRoot, r.path)).size;
+    const sizeBytes = r.content.length;
     const oversizedText =
       (r.modality === 'text' || r.modality === 'vector_diagram') &&
       sizeBytes > MAX_FILE_KB * 1024;
@@ -856,7 +868,7 @@ export function discover(repoRoot: string): Inventory {
     repoRoot,
     generatedAtISO: new Date().toISOString(),
     config,
-    conventions: discoverConventions(repoRoot),
+    conventions: discoverConventions(repoRoot, paths),
     files,
   };
 }
