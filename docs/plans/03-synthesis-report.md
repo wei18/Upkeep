@@ -264,7 +264,7 @@ Expected: FAIL。
 ```markdown
 # Synthesis prompt 範本
 
-你是 repo-audit 的 synthesis（綜合）角色——唯一看到「全部 reviewer 結果」的腦。
+你是 upkeep 的 synthesis（綜合）角色——唯一看到「全部 reviewer 結果」的腦。
 
 ## 你拿到的輸入
 - `inventory.json`：repo 檔案清單與 metadata。
@@ -575,7 +575,7 @@ Expected: FAIL。
 // src/report-issue.ts
 import type { ConsolidatedReport } from './types.js';
 
-export const ISSUE_MARKER = '<!-- repo-audit-action:report -->';
+export const ISSUE_MARKER = '<!-- upkeep:report -->';
 
 function cell(s: string): string {
   return s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
@@ -585,7 +585,7 @@ export function renderIssueMarkdown(report: ConsolidatedReport): string {
   const s = report.stats;
   const L: string[] = [];
   L.push(ISSUE_MARKER);
-  L.push('# 🔍 Repo Audit Report');
+  L.push('# 🔍 Upkeep Report');
   L.push('');
   L.push(`_Generated ${report.generatedAtISO}_`);
   L.push('');
@@ -753,7 +753,7 @@ export function renderHtml(report: ConsolidatedReport): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Repo Audit Report</title>
+<title>Upkeep Report</title>
 <style>
   body{font:14px/1.5 system-ui,-apple-system,sans-serif;margin:0;padding:2rem;color:#1a1a1a;background:#fafafa}
   h1,h2,h3{margin:.4em 0}
@@ -773,7 +773,7 @@ export function renderHtml(report: ConsolidatedReport): string {
   .filters button.active{background:#1a1a1a;color:#fff}
 </style></head>
 <body>
-<h1>🔍 Repo Audit Report</h1>
+<h1>🔍 Upkeep Report</h1>
 <p>Generated ${esc(report.generatedAtISO)}</p>
 ${synNote}${failedNote}
 ${report.executiveSummary ? `<section><h2>Executive Summary</h2><p>${esc(report.executiveSummary)}</p></section>` : ''}

@@ -1,7 +1,7 @@
 // src/report-issue.ts
 import type { ConsolidatedReport } from './types.js';
 
-export const ISSUE_MARKER = '<!-- repo-audit-action:report -->';
+export const ISSUE_MARKER = '<!-- upkeep:report -->';
 
 function cell(s: string): string {
   return s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
@@ -11,7 +11,7 @@ export function renderIssueMarkdown(report: ConsolidatedReport): string {
   const s = report.stats;
   const L: string[] = [];
   L.push(ISSUE_MARKER);
-  L.push('# 🔍 Repo Audit Report');
+  L.push('# 🔍 Upkeep Report');
   L.push('');
   L.push(`_Generated ${report.generatedAtISO}_`);
   L.push('');

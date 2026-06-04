@@ -1,8 +1,8 @@
-# Repo Audit Action — 設計文件
+# Upkeep — 設計文件
 
 - 狀態：設計定案，待寫實作計畫
 - 日期：2026-06-04
-- 位置：獨立 repo `repo-audit-action/`，spec 於 `docs/design.md`（見 §6）
+- 位置：獨立 repo `upkeep/`，spec 於 `docs/design.md`（見 §6）
 - 自我約束：**本 spec 是 SSOT，需隨實作持續 up-to-date**（此工具本身即在抓 drift，spec 不得漂移）
 
 ---
@@ -199,12 +199,12 @@ report:
 
 ## 6. Repo 落點（已定）
 
-此 action 發佈成可被 `uses:` 引用者，故獨立成 repo：`/Users/zw/GitHub/Wei18/repo-audit-action/`（已 `git init`）。
+此 action 發佈成可被 `uses:` 引用者，故獨立成 repo：`/Users/zw/GitHub/Wei18/upkeep/`（已 `git init`）。
 
 預期結構：
 
 ```
-repo-audit-action/
+upkeep/
 ├── action.yml                       # composite action 進入點
 ├── README.md                        # 用法（uses: 範例、需要的 secret/權限）
 ├── docs/design.md                   # 本 spec（living document）

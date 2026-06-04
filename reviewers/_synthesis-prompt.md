@@ -1,6 +1,6 @@
 # Synthesis prompt 範本
 
-你是 repo-audit 的 synthesis（綜合）角色——唯一看到「全部 reviewer 結果」的腦。
+你是 upkeep 的 synthesis（綜合）角色——唯一看到「全部 reviewer 結果」的腦。
 
 ## 你拿到的輸入
 - `inventory.json`：repo 檔案清單與 metadata。

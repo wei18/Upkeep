@@ -94,7 +94,7 @@ Expected: 無錯誤，exit 0。
 
 ```bash
 git add src/types.ts
-git -c user.name='zw' -c user.email='41205mw@gmail.com' commit -m "feat: add Finding/ReviewerOutput contract types"
+git commit -m "feat: add Finding/ReviewerOutput contract types"
 ```
 
 ---
@@ -247,7 +247,7 @@ Expected: PASS（9 tests）。
 
 ```bash
 git add src/findings.ts test/findings.test.ts
-git -c user.name='zw' -c user.email='41205mw@gmail.com' commit -m "feat: runtime validator for reviewer output contract"
+git commit -m "feat: runtime validator for reviewer output contract"
 ```
 
 ---
@@ -377,7 +377,7 @@ Expected: PASS（6 tests）。
 
 ```bash
 git add src/rubric.ts test/rubric.test.ts
-git -c user.name='zw' -c user.email='41205mw@gmail.com' commit -m "feat: compose per-reviewer rubric bundle (builtin + conventions + override + targets)"
+git commit -m "feat: compose per-reviewer rubric bundle (builtin + conventions + override + targets)"
 ```
 
 ---
@@ -462,7 +462,7 @@ Expected: FAIL（資產檔不存在）。
 ```markdown
 # 共用 reviewer prompt 範本
 
-你是 repo-audit 的一位專業 reviewer，名稱：`{{REVIEWER}}`。
+你是 upkeep 的一位專業 reviewer，名稱：`{{REVIEWER}}`。
 
 ## 你拿到的輸入
 - `inventory.json`：整個 repo 的檔案清單與 metadata（modality/category/hash/lastCommitISO/referencedBy/oversizedText）。
@@ -512,7 +512,7 @@ Expected: PASS（3 tests）。
 
 ```bash
 git add reviewers/docs_staleness.md reviewers/_reviewer-prompt.md test/reviewer-assets.test.ts
-git -c user.name='zw' -c user.email='41205mw@gmail.com' commit -m "feat: docs_staleness builtin rubric + shared reviewer prompt template"
+git commit -m "feat: docs_staleness builtin rubric + shared reviewer prompt template"
 ```
 
 ---
@@ -611,7 +611,7 @@ Expected: 全 PASS、無型別錯誤。
 
 ```bash
 git add test/contract/docs_staleness.sample.json test/contract.test.ts
-git -c user.name='zw' -c user.email='41205mw@gmail.com' commit -m "test: recorded findings contract anchor for docs_staleness"
+git commit -m "test: recorded findings contract anchor for docs_staleness"
 ```
 
 ---

@@ -39,7 +39,7 @@ export function renderHtml(report: ConsolidatedReport): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Repo Audit Report</title>
+<title>Upkeep Report</title>
 <style>
   body{font:14px/1.5 system-ui,-apple-system,sans-serif;margin:0;padding:2rem;color:#1a1a1a;background:#fafafa}
   h1,h2,h3{margin:.4em 0}
@@ -59,7 +59,7 @@ export function renderHtml(report: ConsolidatedReport): string {
   .filters button.active{background:#1a1a1a;color:#fff}
 </style></head>
 <body>
-<h1>🔍 Repo Audit Report</h1>
+<h1>🔍 Upkeep Report</h1>
 <p>Generated ${esc(report.generatedAtISO)}</p>
 ${synNote}${failedNote}
 ${report.executiveSummary ? `<section><h2>Executive Summary</h2><p>${esc(report.executiveSummary)}</p></section>` : ''}

@@ -15,7 +15,7 @@
 ## File Structure
 
 ```
-repo-audit-action/
+upkeep/
 ├── package.json            # ESM, scripts: build/test, deps: yaml; dev: vitest, typescript, @types/node
 ├── tsconfig.json           # ES2022, moduleResolution bundler, strict
 ├── vitest.config.ts        # node 環境
@@ -44,7 +44,7 @@ test/                       # 與 src 對應的 *.test.ts（vitest）
 
 ```json
 {
-  "name": "repo-audit-action",
+  "name": "upkeep",
   "version": "0.0.0",
   "private": true,
   "type": "module",
