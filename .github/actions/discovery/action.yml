@@ -23,8 +23,8 @@ runs:
       run: |
         set -euo pipefail
         ROOT="${{ github.action_path }}/../../.."
-        node --import tsx "$ROOT/src/discovery.ts" "${{ inputs.target }}" "${{ inputs.target }}/inventory.json"
-        node --import tsx "$ROOT/src/matrix.ts" "${{ inputs.target }}" "$GITHUB_OUTPUT"
+        "$ROOT/node_modules/.bin/tsx" "$ROOT/src/discovery.ts" "${{ inputs.target }}" "${{ inputs.target }}/inventory.json"
+        "$ROOT/node_modules/.bin/tsx" "$ROOT/src/matrix.ts" "${{ inputs.target }}" "$GITHUB_OUTPUT"
     - uses: actions/upload-artifact@v4
       with:
         name: inventory

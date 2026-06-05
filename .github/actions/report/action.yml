@@ -34,7 +34,7 @@ runs:
         ROOT="${{ github.action_path }}/../../.."
         SYN="${{ inputs.target }}/synthesis.json"
         [ -f "$SYN" ] || SYN="-"
-        node --import tsx "$ROOT/src/report.ts" \
+        "$ROOT/node_modules/.bin/tsx" "$ROOT/src/report.ts" \
           "${{ inputs.target }}/findings" "$SYN" \
           "${{ runner.temp }}/report.html" "${{ runner.temp }}/issue.md"
     - uses: actions/upload-artifact@v4
@@ -49,7 +49,7 @@ runs:
         set -euo pipefail
         ROOT="${{ github.action_path }}/../../.."
         gh issue list --state open --label "${{ inputs.issue_label }}" --json number,body > "${{ runner.temp }}/issues.json" || echo '[]' > "${{ runner.temp }}/issues.json"
-        NUM="$(node --import tsx "$ROOT/src/find-issue.ts" "${{ runner.temp }}/issues.json")"
+        NUM="$("$ROOT/node_modules/.bin/tsx" "$ROOT/src/find-issue.ts" "${{ runner.temp }}/issues.json")"
         if [ -n "$NUM" ]; then
           gh issue edit "$NUM" --body-file "${{ runner.temp }}/issue.md"
         else

@@ -33,7 +33,7 @@ runs:
       run: |
         set -euo pipefail
         ROOT="${{ github.action_path }}/../../.."
-        node --import tsx "$ROOT/src/synthesis-prompt-cli.ts" "${{ runner.temp }}/synthesis-prompt.txt"
+        "$ROOT/node_modules/.bin/tsx" "$ROOT/src/synthesis-prompt-cli.ts" "${{ runner.temp }}/synthesis-prompt.txt"
     - uses: anthropics/claude-code-action@v1
       continue-on-error: true
       with:
@@ -48,7 +48,7 @@ runs:
       run: |
         set -euo pipefail
         ROOT="${{ github.action_path }}/../../.."
-        node --import tsx "$ROOT/src/finalize.ts" synthesis "${{ inputs.target }}/synthesis.json"
+        "$ROOT/node_modules/.bin/tsx" "$ROOT/src/finalize.ts" synthesis "${{ inputs.target }}/synthesis.json"
     - name: upload synthesis
       if: always()
       uses: actions/upload-artifact@v4
