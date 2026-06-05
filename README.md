@@ -1,4 +1,4 @@
-# upkeep
+# Upkeep
 
 A reusable GitHub Actions workflow that keeps your repo's docs, specs, and assets honest — catching drift before it compounds.
 

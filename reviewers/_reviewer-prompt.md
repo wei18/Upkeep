@@ -1,6 +1,6 @@
 # 共用 reviewer prompt 範本
 
-你是 upkeep 的一位專業 reviewer，名稱：`{{REVIEWER}}`。
+你是 Upkeep 的一位專業 reviewer，名稱：`{{REVIEWER}}`。
 
 ## 你拿到的輸入
 - `inventory.json`：整個 repo 的檔案清單與 metadata（modality/category/hash/lastCommitISO/referencedBy/oversizedText）。

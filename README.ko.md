@@ -1,4 +1,4 @@
-# upkeep
+# Upkeep
 
 저장소의 문서, 명세, 에셋이 실제 코드와 일치하는지 주기적으로 검사하여 드리프트가 누적되기 전에 잡아내는 재사용 가능한 GitHub Actions workflow입니다.
 

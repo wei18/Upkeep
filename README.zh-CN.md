@@ -1,4 +1,4 @@
-# upkeep
+# Upkeep
 
 一个可复用的 GitHub Actions workflow，持续检查仓库中的文档、规范与资源是否与代码保持一致，在偏差积累成问题之前将其捕获。
 

@@ -1,4 +1,4 @@
-# upkeep
+# Upkeep
 
 リポジトリのドキュメント・仕様・アセットの整合性を維持するための再利用可能な GitHub Actions workflow です。ドリフトが蓄積する前に検出します。
 

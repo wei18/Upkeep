@@ -1,4 +1,4 @@
-# How upkeep works
+# How Upkeep works
 
 ## The problem
 
@@ -8,7 +8,7 @@ Periodic human review catches some of it, but it requires keeping the full conte
 
 ## The pipeline: fan-out → synthesis → report
 
-upkeep runs as a reusable `workflow_call` workflow composed of four deterministic stages.
+Upkeep runs as a reusable `workflow_call` workflow composed of four deterministic stages.
 
 **1. Discovery**
 
@@ -40,11 +40,11 @@ A deterministic report step renders everything into a self-contained HTML file (
 
 ## No assumed source of truth
 
-When two artifacts disagree — say, a spec describes behavior X but the code implements behavior Y — upkeep does not automatically declare one of them stale. Either artifact could be the outdated one. Instead, it reports the divergence with supporting evidence: git recency of each file, cross-references found in other files, and any explicit versioning present. The human decides what to fix.
+When two artifacts disagree — say, a spec describes behavior X but the code implements behavior Y — Upkeep does not automatically declare one of them stale. Either artifact could be the outdated one. Instead, it reports the divergence with supporting evidence: git recency of each file, cross-references found in other files, and any explicit versioning present. The human decides what to fix.
 
 ## Report only, never edits
 
-upkeep has no write access to your repository content. It reads files and opens/updates a single GitHub issue. It will never modify, rename, or delete any file in your repo.
+Upkeep has no write access to your repository content. It reads files and opens/updates a single GitHub issue. It will never modify, rename, or delete any file in your repo.
 
 ## Outputs
 

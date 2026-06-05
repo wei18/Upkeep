@@ -1,4 +1,4 @@
-# upkeep
+# Upkeep
 
 一個可重用的 GitHub Actions workflow，讓你的 repo 文件、規格說明與資源保持正確——在累積的偏差造成問題之前即時發現。
 

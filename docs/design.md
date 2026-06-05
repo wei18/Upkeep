@@ -200,15 +200,15 @@ report:
 
 ## 6. Repo 落點（已定）
 
-此 action 發佈成可被 `uses:` 引用者，故獨立成 repo。本地目錄 `/Users/zw/GitHub/Wei18/repo-audit-action/`（已 `git init`）；**發佈/套件名為 `upkeep`**（`uses: wei18/upkeep@v1`）——本地資料夾名與發佈名不同是刻意保留。
+此 action 發佈成可被 `uses:` 引用者，故獨立成 repo。本地目錄 `/Users/zw/GitHub/Wei18/repo-audit-action/`（已 `git init`）；**發佈/套件名為 `Upkeep`**（`uses: wei18/upkeep@v1`）——本地資料夾名與發佈名不同是刻意保留。
 
 預期結構：
 
 ```
-repo-audit-action/                   # 本地目錄（發佈名 upkeep）
+repo-audit-action/                   # 本地目錄（發佈名 Upkeep）
 ├── .github/
 │   ├── workflows/audit.yml          # 可重用 workflow（on: workflow_call）：jobs/matrix 編排
-│   └── actions/                     # composite 子 action（被 workflow 的 job uses，自帶 upkeep 程式碼）
+│   └── actions/                     # composite 子 action（被 workflow 的 job uses，自帶 Upkeep 程式碼）
 │       ├── discovery/  reviewer/  synthesis/  report/
 ├── README.md                        # 用法（job-level uses: 範例、secret/權限）
 ├── docs/design.md                   # 本 spec（living document）
@@ -217,7 +217,7 @@ repo-audit-action/                   # 本地目錄（發佈名 upkeep）
 └── test/                            # 單元 + 契約 + e2e（樣本見 §10）
 ```
 
-> 子 action 機制：reusable workflow 的 job 跑在**呼叫方**的 checkout；upkeep 自身程式碼（src/、reviewers/）透過 `uses: wei18/upkeep/.github/actions/<x>@v1` 帶入（GitHub 自動抓 upkeep repo）。每個 reviewer 是獨立 matrix job 跑一個 plain `claude-code-action` prompt（寫 `findings/<reviewer>.json`），**不需 in-run subagent**，故 `--agents`/`Agent` passthrough 風險消失。
+> 子 action 機制：reusable workflow 的 job 跑在**呼叫方**的 checkout；Upkeep 自身程式碼（src/、reviewers/）透過 `uses: wei18/upkeep/.github/actions/<x>@v1` 帶入（GitHub 自動抓 Upkeep repo）。每個 reviewer 是獨立 matrix job 跑一個 plain `claude-code-action` prompt（寫 `findings/<reviewer>.json`），**不需 in-run subagent**，故 `--agents`/`Agent` passthrough 風險消失。
 
 ---
 
