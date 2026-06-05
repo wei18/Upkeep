@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript/Node 20（沿用，含 `yaml` 依賴用於 structure 測試）；GitHub Actions（reusable workflow + composite actions）；`claude-code-action`；`gh` CLI。
 
-對應 spec：`docs/design.md` §1（matrix + sub-action 編排）、§8（失敗隔離/降級）、§4/§4.1（findings/synthesis 契約）、§10（e2e 樣本 wei18/Sudoku）。
+對應 spec：`../design.md` §1（matrix + sub-action 編排）、§8（失敗隔離/降級）、§4/§4.1（findings/synthesis 契約）、§10（e2e 樣本 wei18/Sudoku）。
 
 ### 前置（已驗證 ✓）
 - `claude-code-action` 支援 `prompt` 自主執行、`claude_args` 直傳 `--allowedTools/--max-turns/--model`、可讀寫 workspace 檔（Plan 4 前已查官方文件）。
@@ -617,7 +617,7 @@ jobs:
 - 一個帶標籤 `audit` 的 tracking issue（每次 run upsert 同一個）。
 - 一份 self-contained HTML 報告，存在該次 workflow run 的 artifacts（`report-html`）。
 
-可選設定檔 `.claude/audit.yml`（全可選）見 `docs/design.md` §5。
+可選設定檔 `.claude/audit.yml`（全可選）見 `../design.md` §5。
 ````
 
 - [ ] **Step 2: 確認 README 不再宣稱「尚未實作」**

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Node 20, vitest（沿用）。無新增 runtime 相依。
 
-對應 spec：`docs/design.md` §1[3][4][5]、§4（去重/排序規則）、§4.1（synthesis 契約）、§8（synthesis 降級）。
+對應 spec：`../design.md` §1[3][4][5]、§4（去重/排序規則）、§4.1（synthesis 契約）、§8（synthesis 降級）。
 
 ### 範圍邊界（本 plan 不做）
 - 不觸發 `claude-code-action`（synthesis 的 LLM 實際呼叫 → Plan 4）

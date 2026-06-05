@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Node 20, vitest（沿用）。無新增 runtime 相依。
 
-對應 spec：`docs/design.md` §2/§2.1（reviewer + rubric 合成 + 多語）、§3（SSOT 原則）、§4（findings schema）。
+對應 spec：`../design.md` §2/§2.1（reviewer + rubric 合成 + 多語）、§3（SSOT 原則）、§4（findings schema）。
 
 ### 範圍邊界（本 plan 不做）
 - 不觸發 `claude-code-action` / 不呼叫 API（→ Plan 4 e2e）

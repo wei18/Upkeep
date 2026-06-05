@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Node 20, vitest（沿用）。無新增 runtime 相依（glob 自寫最小實作，不引入套件）。
 
-對應 spec：`docs/design.md` §1（matrix + sub-action）、§2（rubric/paths）、§5（audit.yml paths）、§4.1（synthesis prompt）。
+對應 spec：`../design.md` §1（matrix + sub-action）、§2（rubric/paths）、§5（audit.yml paths）、§4.1（synthesis prompt）。
 
 ### 範圍邊界（本 plan 不做）
 - `.github/workflows/audit.yml`、`.github/actions/*`、artifact/issue upsert 的 gh 呼叫、直播 e2e → **Plan 4b**

@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Node 20, vitest, `yaml`（解析 audit.yml）。git CLI 為執行期相依（GH runner 內建）。
 
-對應 spec：`docs/design.md` §1[1] Discovery、§2 rubric 來源探索、§5 audit.yml、§7 模態分流。
+對應 spec：`../design.md` §1[1] Discovery、§2 rubric 來源探索、§5 audit.yml、§7 模態分流。
 
 ---
 
