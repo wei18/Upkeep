@@ -1,6 +1,6 @@
 # e2e 程序（對 wei18/Sudoku）
 
-前置：upkeep 已 push 到 `wei18/upkeep`（分支或 tag）；`wei18/Sudoku` 有 repo secret `ANTHROPIC_API_KEY`。
+前置：upkeep 已 push 到 `wei18/upkeep`（分支或 tag）；`wei18/Sudoku` 有 repo secret `CLAUDE_CODE_OAUTH_TOKEN`（本機 `claude setup-token` 產生，走 Pro/Max 訂閱；`gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo wei18/Sudoku` 設入）。
 
 ## 1. 暫時把子 action / workflow 的 ref 指向 dev 分支
 本機在 upkeep：把 `.github/workflows/audit.yml` 內四個 `@v1` 暫改為 `@<dev-branch>`，push 該分支。
@@ -14,7 +14,7 @@ jobs:
   audit:
     uses: wei18/upkeep/.github/workflows/audit.yml@<dev-branch>
     secrets:
-      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 push 後在 Actions 頁 `Run workflow`。
 

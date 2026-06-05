@@ -32,12 +32,12 @@ jobs:
       model: claude-opus-4-8     # optional
       issue_label: audit         # optional; default: audit
     secrets:
-      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
 **사전 요구 사항**
 
-- `ANTHROPIC_API_KEY`라는 이름의 저장소 secret.
+- `CLAUDE_CODE_OAUTH_TOKEN`라는 이름의 저장소 secret.
 - 위에 표시된 `permissions` 블록 (`contents: read` + `issues: write`).
 
 **출력**

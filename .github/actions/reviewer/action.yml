@@ -11,7 +11,7 @@ inputs:
     default: claude-opus-4-8
   max_turns:
     default: '15'
-  anthropic_api_key:
+  claude_code_oauth_token:
     required: true
 runs:
   using: composite
@@ -42,7 +42,7 @@ runs:
           Read the file ${{ runner.temp }}/reviewer-prompt.txt and follow its instructions exactly.
           Produce findings/${{ inputs.reviewer }}.json in the repository root, conforming to the JSON contract in that prompt.
         claude_args: --allowedTools Read,Write,Glob,Grep --max-turns ${{ inputs.max_turns }} --model ${{ inputs.model }}
-        anthropic_api_key: ${{ inputs.anthropic_api_key }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
     - name: finalize findings (fallback to failed if missing/invalid)
       if: always()
       shell: bash

@@ -32,12 +32,12 @@ jobs:
       model: claude-opus-4-8     # optional
       issue_label: audit         # optional; default: audit
     secrets:
-      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
 **前置条件**
 
-- 仓库中需配置名为 `ANTHROPIC_API_KEY` 的 secret。
+- 仓库中需配置名为 `CLAUDE_CODE_OAUTH_TOKEN` 的 secret。
 - 需包含上述 `permissions` 块（`contents: read` + `issues: write`）。
 
 **输出**

@@ -12,7 +12,7 @@ on:
         type: string
         default: audit
     secrets:
-      anthropic_api_key:
+      claude_code_oauth_token:
         required: true
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
           reviewer: ${{ matrix.reviewer }}
           model: ${{ inputs.model }}
           max_turns: ${{ inputs.max_turns }}
-          anthropic_api_key: ${{ secrets.anthropic_api_key }}
+          claude_code_oauth_token: ${{ secrets.claude_code_oauth_token }}
 
   synthesis:
     needs: review
@@ -55,7 +55,7 @@ jobs:
         with:
           model: ${{ inputs.model }}
           max_turns: ${{ inputs.max_turns }}
-          anthropic_api_key: ${{ secrets.anthropic_api_key }}
+          claude_code_oauth_token: ${{ secrets.claude_code_oauth_token }}
 
   report:
     needs: synthesis
