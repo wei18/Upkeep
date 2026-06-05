@@ -232,7 +232,7 @@ inputs:
     default: claude-opus-4-8
   max_turns:
     default: '15'
-  anthropic_api_key:
+  claude_code_oauth_token:
     required: true
 runs:
   using: composite
@@ -263,7 +263,7 @@ runs:
           Read the file ${{ runner.temp }}/reviewer-prompt.txt and follow its instructions exactly.
           Produce findings/${{ inputs.reviewer }}.json in the repository root, conforming to the JSON contract in that prompt.
         claude_args: --allowedTools Read,Write,Glob,Grep --max-turns ${{ inputs.max_turns }} --model ${{ inputs.model }}
-        anthropic_api_key: ${{ inputs.anthropic_api_key }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
     - name: finalize findings (fallback to failed if missing/invalid)
       if: always()
       shell: bash
@@ -307,7 +307,7 @@ inputs:
     default: claude-opus-4-8
   max_turns:
     default: '15'
-  anthropic_api_key:
+  claude_code_oauth_token:
     required: true
 runs:
   using: composite
@@ -341,7 +341,7 @@ runs:
           Read ${{ runner.temp }}/synthesis-prompt.txt, then read inventory.json and all files under findings/.
           Produce synthesis.json in the repository root per the contract in that prompt.
         claude_args: --allowedTools Read,Write,Glob,Grep --max-turns ${{ inputs.max_turns }} --model ${{ inputs.model }}
-        anthropic_api_key: ${{ inputs.anthropic_api_key }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
     - name: finalize synthesis
       if: always()
       shell: bash
@@ -466,7 +466,7 @@ const wf = parse(readFileSync(join(ROOT, '.github/workflows/audit.yml'), 'utf8')
 describe('audit reusable workflow structure', () => {
   it('is a reusable workflow requiring the anthropic secret', () => {
     expect(wf.on.workflow_call).toBeDefined();
-    expect(wf.on.workflow_call.secrets.anthropic_api_key.required).toBe(true);
+    expect(wf.on.workflow_call.secrets.claude_code_oauth_token.required).toBe(true);
   });
   it('declares issues:write + contents:read permissions', () => {
     expect(wf.permissions.contents).toBe('read');
@@ -507,7 +507,7 @@ on:
         type: string
         default: audit
     secrets:
-      anthropic_api_key:
+      claude_code_oauth_token:
         required: true
 
 permissions:
@@ -538,7 +538,7 @@ jobs:
           reviewer: ${{ matrix.reviewer }}
           model: ${{ inputs.model }}
           max_turns: ${{ inputs.max_turns }}
-          anthropic_api_key: ${{ secrets.anthropic_api_key }}
+          claude_code_oauth_token: ${{ secrets.claude_code_oauth_token }}
 
   synthesis:
     needs: review
@@ -550,7 +550,7 @@ jobs:
         with:
           model: ${{ inputs.model }}
           max_turns: ${{ inputs.max_turns }}
-          anthropic_api_key: ${{ secrets.anthropic_api_key }}
+          claude_code_oauth_token: ${{ secrets.claude_code_oauth_token }}
 
   report:
     needs: synthesis
@@ -606,11 +606,11 @@ jobs:
       model: claude-opus-4-8     # 可選
       issue_label: audit         # 可選；預設 audit
     secrets:
-      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
 需求：
-- repo secret `ANTHROPIC_API_KEY`。
+- repo secret `CLAUDE_CODE_OAUTH_TOKEN`。
 - 預設權限已含 `contents: read` + `issues: write`（workflow 自帶）。
 
 產出：
@@ -664,14 +664,14 @@ Expected: 印出 `report: 1 findings ...` 且 `issue.md` 含 marker、`report.ht
 **Files:**
 - Create: `docs/e2e.md`
 
-> 這一步**需要真實 GitHub + ANTHROPIC_API_KEY**，無法在 CI 單元測完成；以文件記錄程序並由人執行一次。dev 期間 `uses:` 的 ref 用分支（非 `@v1`）。
+> 這一步**需要真實 GitHub + CLAUDE_CODE_OAUTH_TOKEN**，無法在 CI 單元測完成；以文件記錄程序並由人執行一次。dev 期間 `uses:` 的 ref 用分支（非 `@v1`）。
 
 - [ ] **Step 1: 建 `docs/e2e.md`**
 
 ````markdown
 # e2e 程序（對 wei18/Sudoku）
 
-前置：upkeep 已 push 到 `wei18/upkeep`（分支或 tag）；`wei18/Sudoku` 有 repo secret `ANTHROPIC_API_KEY`。
+前置：upkeep 已 push 到 `wei18/upkeep`（分支或 tag）；`wei18/Sudoku` 有 repo secret `CLAUDE_CODE_OAUTH_TOKEN`。
 
 ## 1. 暫時把子 action / workflow 的 ref 指向 dev 分支
 本機在 upkeep：把 `.github/workflows/audit.yml` 內四個 `@v1` 暫改為 `@<dev-branch>`，push 該分支。
@@ -685,7 +685,7 @@ jobs:
   audit:
     uses: wei18/upkeep/.github/workflows/audit.yml@<dev-branch>
     secrets:
-      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 push 後在 Actions 頁 `Run workflow`。
 

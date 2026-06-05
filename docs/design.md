@@ -24,7 +24,7 @@
 
 ## 1. 架構與執行流程
 
-形態：**可重用 workflow**（`.github/workflows/audit.yml`，`on: workflow_call`），內部以官方 `claude-code-action` 為 LLM 引擎。需要呼叫方提供 `ANTHROPIC_API_KEY` secret（`secrets: inherit` 或顯式傳入）。
+形態：**可重用 workflow**（`.github/workflows/audit.yml`，`on: workflow_call`），內部以官方 `claude-code-action` 為 LLM 引擎。需要呼叫方提供 `CLAUDE_CODE_OAUTH_TOKEN` secret（`secrets: inherit` 或顯式傳入）。
 > 為何不是 composite action：composite action 是單一 job 的 step 序列，**不能用 `strategy.matrix`**；matrix（每 reviewer 一個平行 job）只能在 workflow job 層做，故採 reusable workflow（已查 GitHub 官方文件確認）。
 
 **編排模型：fan-out → reduce（matrix + synthesis），無 LLM lead。** 每個啟用的 reviewer 各跑一個獨立 matrix **job**（內含一個 `claude-code-action` step；`fail-fast: false` + `continue-on-error` 做失敗隔離），各自輸出結構化 findings；之後一個 synthesis job（單一 LLM）讀全部 findings 做語意級跨 reviewer 關聯。不依賴「單 run 內 spawn subagent」（該能力雖經實證可行，但 per-job 在確定性/隔離/零殘留風險上更佳）。

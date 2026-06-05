@@ -32,12 +32,12 @@ jobs:
       model: claude-opus-4-8     # optional
       issue_label: audit         # optional; default: audit
     secrets:
-      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
 **Requirements**
 
-- A repo secret named `ANTHROPIC_API_KEY`.
+- A repo secret named `CLAUDE_CODE_OAUTH_TOKEN` — generate it locally with `claude setup-token` (available to Claude Pro/Max subscribers; usage counts against your subscription). Alternatively, swap the workflow input to `anthropic_api_key` for usage-based API billing.
 - The `permissions` block shown above (`contents: read` + `issues: write`).
 
 **Outputs**

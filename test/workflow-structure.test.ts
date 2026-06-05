@@ -11,7 +11,7 @@ const wf = parse(readFileSync(join(ROOT, '.github/workflows/audit.yml'), 'utf8')
 describe('audit reusable workflow structure', () => {
   it('is a reusable workflow requiring the anthropic secret', () => {
     expect(wf.on.workflow_call).toBeDefined();
-    expect(wf.on.workflow_call.secrets.anthropic_api_key.required).toBe(true);
+    expect(wf.on.workflow_call.secrets.claude_code_oauth_token.required).toBe(true);
   });
   it('declares issues:write + contents:read permissions', () => {
     expect(wf.permissions.contents).toBe('read');

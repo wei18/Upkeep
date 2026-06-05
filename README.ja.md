@@ -32,12 +32,12 @@ jobs:
       model: claude-opus-4-8     # optional
       issue_label: audit         # optional; default: audit
     secrets:
-      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
 **前提条件**
 
-- `ANTHROPIC_API_KEY` という名前のリポジトリ secret。
+- `CLAUDE_CODE_OAUTH_TOKEN` という名前のリポジトリ secret。
 - 上記の `permissions` ブロック（`contents: read` + `issues: write`）。
 
 **出力**
