@@ -63,7 +63,21 @@ jobs:
 
 ## 설정
 
-모든 설정은 선택 사항입니다 — 위의 caller workflow 외에 별도 설정 없이 바로 사용할 수 있습니다. 리뷰어를 활성화하거나 조정하려면 `.claude/audit.yml`을 생성하세요. 전체 스키마와 옵션은 [`docs/design.md`](design.md)를 참고하세요.
+설정은 의도적으로 두 개의 독립된 영역으로 나뉩니다:
+
+- **Workflow 입력**(위 caller의 `with:` 블록)은 *엔진을 어떻게 실행할지*를 제어합니다: `model`, `max_turns`, `issue_label`, `rubric_lang`.
+- **`.claude/audit.yml`**(감사 대상 repo에 커밋)은 *무엇을 감사할지*를 제어합니다: 어떤 리뷰어를 활성화할지, per-reviewer rubric 재정의, `report.minSeverity`. 리뷰어 활성화 여부는 workflow 입력이 아니라 여기에 있습니다 — repo마다 정해지고 repo와 함께 진화해야 하는 정책이기 때문입니다.
+
+모든 설정은 선택 사항입니다. 예를 들어 기본적으로 꺼져 있는 `i18n` 리뷰어를 켜려면:
+
+```yaml
+# .claude/audit.yml
+reviewers:
+  i18n:
+    enabled: true
+```
+
+전체 스키마와 옵션은 [`docs/design.md`](design.md)를 참고하세요.
 
 ## 문서
 

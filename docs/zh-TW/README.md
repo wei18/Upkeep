@@ -63,7 +63,21 @@ jobs:
 
 ## 設定
 
-所有設定皆為選填——除了上方的呼叫端 workflow 之外，無需任何額外設置。如需啟用或調整審查員，請建立 `.claude/audit.yml`；完整 schema 與選項說明見 [`docs/design.md`](design.md)。
+設定刻意分為兩個獨立面向：
+
+- **Workflow 輸入參數**（上方呼叫端的 `with:` 區塊）控制*引擎怎麼跑*：`model`、`max_turns`、`issue_label`、`rubric_lang`。
+- **`.claude/audit.yml`**（提交在被稽核的 repo 內）控制*要稽核什麼*：啟用哪些審查員、per-reviewer rubric 覆寫、`report.minSeverity`。審查員的開關放在這裡——而非 workflow 輸入參數——因為它是該 repo 自己、應隨 repo 演進的政策。
+
+所有設定皆為選填。例如要啟用預設關閉的 `i18n` 審查員：
+
+```yaml
+# .claude/audit.yml
+reviewers:
+  i18n:
+    enabled: true
+```
+
+完整 schema 與選項說明見 [`docs/design.md`](design.md)。
 
 ## 文件
 

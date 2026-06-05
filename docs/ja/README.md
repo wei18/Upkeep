@@ -63,7 +63,21 @@ jobs:
 
 ## 設定
 
-設定はすべて任意です — 上記の呼び出し元 workflow 以外のセットアップは不要です。レビュアーを有効化・調整するには `.claude/audit.yml` を作成してください。スキーマとオプションの詳細は [`docs/design.md`](design.md) を参照してください。
+設定は意図的に 2 つの独立した面に分かれています:
+
+- **Workflow 入力**（上記の呼び出し元の `with:` ブロック）は*エンジンの動かし方*を制御します: `model`、`max_turns`、`issue_label`、`rubric_lang`。
+- **`.claude/audit.yml`**（監査対象の repo にコミット）は*何を監査するか*を制御します: どのレビュアーを有効にするか、per-reviewer の rubric 上書き、`report.minSeverity`。レビュアーの有効・無効はここに置かれます——workflow 入力ではなく——repo ごとに、repo とともに進化すべきポリシーだからです。
+
+設定はすべて任意です。たとえばデフォルトで無効な `i18n` レビュアーを有効にするには:
+
+```yaml
+# .claude/audit.yml
+reviewers:
+  i18n:
+    enabled: true
+```
+
+スキーマとオプションの詳細は [`docs/design.md`](design.md) を参照してください。
 
 ## ドキュメント
 

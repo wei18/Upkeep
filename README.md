@@ -63,7 +63,21 @@ jobs:
 
 ## Configuration
 
-All configuration is optional — zero setup required beyond the caller workflow above. To enable or tune reviewers, create `.claude/audit.yml`; see [`docs/design.md`](docs/en/design.md) for the full schema and options.
+There are two separate configuration surfaces, by design:
+
+- **Workflow inputs** (the caller's `with:` block above) control *how the engine runs*: `model`, `max_turns`, `issue_label`, `rubric_lang`.
+- **`.claude/audit.yml`** (committed in the audited repo) controls *what gets audited*: which reviewers are enabled, per-reviewer rubric overrides, and `report.minSeverity`. Reviewer enablement lives here — not as a workflow input — because it is a per-repo policy that should evolve with the repo.
+
+Everything is optional. To turn on the off-by-default `i18n` reviewer, for example:
+
+```yaml
+# .claude/audit.yml
+reviewers:
+  i18n:
+    enabled: true
+```
+
+See [`docs/design.md`](docs/en/design.md) for the full schema and options.
 
 ## Docs
 

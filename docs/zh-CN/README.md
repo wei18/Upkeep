@@ -63,7 +63,21 @@ jobs:
 
 ## 配置
 
-所有配置均为可选项 — 除上述调用 workflow 外，无需任何额外设置。如需启用或调整审查器，可创建 `.claude/audit.yml`；完整 schema 及选项说明见 [`docs/design.md`](design.md)。
+配置刻意分为两个独立的层面：
+
+- **Workflow 输入参数**（上方调用端的 `with:` 块）控制*引擎如何运行*：`model`、`max_turns`、`issue_label`、`rubric_lang`。
+- **`.claude/audit.yml`**（提交在被审计的 repo 内）控制*审计什么*：启用哪些审查器、per-reviewer rubric 覆写、`report.minSeverity`。审查器的开关放在这里——而非 workflow 输入参数——因为它是该 repo 自身、应随 repo 演进的策略。
+
+所有配置均为可选项。例如要启用默认关闭的 `i18n` 审查器：
+
+```yaml
+# .claude/audit.yml
+reviewers:
+  i18n:
+    enabled: true
+```
+
+完整 schema 及选项说明见 [`docs/design.md`](design.md)。
 
 ## 文档
 
