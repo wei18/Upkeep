@@ -62,10 +62,10 @@ jobs:
 
 ## 配置
 
-所有配置均为可选项 — 除上述调用 workflow 外，无需任何额外设置。如需启用或调整审查器，可创建 `.claude/audit.yml`；完整 schema 及选项说明见 [`docs/design.md`](../design.md)。
+所有配置均为可选项 — 除上述调用 workflow 外，无需任何额外设置。如需启用或调整审查器，可创建 `.claude/audit.yml`；完整 schema 及选项说明见 [`docs/design.md`](design.md)。
 
 ## 文档
 
 - [`docs/overview.md`](overview.md) — 流水线工作原理
-- [`docs/design.md`](../design.md) — 完整设计参考
+- [`docs/design.md`](design.md) — 完整设计参考
 - [`docs/why-reusable-workflow.md`](../en/why-reusable-workflow.md) — 为何是 reusable workflow 而非 `- uses:` step action

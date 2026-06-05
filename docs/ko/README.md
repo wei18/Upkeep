@@ -62,10 +62,10 @@ jobs:
 
 ## 설정
 
-모든 설정은 선택 사항입니다 — 위의 caller workflow 외에 별도 설정 없이 바로 사용할 수 있습니다. 리뷰어를 활성화하거나 조정하려면 `.claude/audit.yml`을 생성하세요. 전체 스키마와 옵션은 [`docs/design.md`](../design.md)를 참고하세요.
+모든 설정은 선택 사항입니다 — 위의 caller workflow 외에 별도 설정 없이 바로 사용할 수 있습니다. 리뷰어를 활성화하거나 조정하려면 `.claude/audit.yml`을 생성하세요. 전체 스키마와 옵션은 [`docs/design.md`](design.md)를 참고하세요.
 
 ## 문서
 
 - [`docs/overview.md`](overview.md) — 파이프라인 동작 방식
-- [`docs/design.md`](../design.md) — 전체 설계 참고 문서
+- [`docs/design.md`](design.md) — 전체 설계 참고 문서
 - [`docs/why-reusable-workflow.md`](../en/why-reusable-workflow.md) — 왜 step 액션이 아니라 reusable workflow인가

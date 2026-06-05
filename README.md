@@ -62,10 +62,10 @@ jobs:
 
 ## Configuration
 
-All configuration is optional — zero setup required beyond the caller workflow above. To enable or tune reviewers, create `.claude/audit.yml`; see [`docs/design.md`](docs/design.md) for the full schema and options.
+All configuration is optional — zero setup required beyond the caller workflow above. To enable or tune reviewers, create `.claude/audit.yml`; see [`docs/design.md`](docs/en/design.md) for the full schema and options.
 
 ## Docs
 
 - [`docs/overview.md`](docs/en/overview.md) — how the pipeline works
-- [`docs/design.md`](docs/design.md) — full design reference
+- [`docs/design.md`](docs/en/design.md) — full design reference
 - [`docs/why-reusable-workflow.md`](docs/en/why-reusable-workflow.md) — why it's a reusable workflow, not a `- uses:` step action

@@ -62,10 +62,10 @@ jobs:
 
 ## 設定
 
-所有設定皆為選填——除了上方的呼叫端 workflow 之外，無需任何額外設置。如需啟用或調整審查員，請建立 `.claude/audit.yml`；完整 schema 與選項說明見 [`docs/design.md`](../design.md)。
+所有設定皆為選填——除了上方的呼叫端 workflow 之外，無需任何額外設置。如需啟用或調整審查員，請建立 `.claude/audit.yml`；完整 schema 與選項說明見 [`docs/design.md`](design.md)。
 
 ## 文件
 
 - [`docs/overview.md`](overview.md) — pipeline 運作原理
-- [`docs/design.md`](../design.md) — 完整設計參考
+- [`docs/design.md`](design.md) — 完整設計參考
 - [`docs/why-reusable-workflow.md`](../en/why-reusable-workflow.md) — 為何是 reusable workflow 而非 `- uses:` step action

@@ -62,10 +62,10 @@ jobs:
 
 ## 設定
 
-設定はすべて任意です — 上記の呼び出し元 workflow 以外のセットアップは不要です。レビュアーを有効化・調整するには `.claude/audit.yml` を作成してください。スキーマとオプションの詳細は [`docs/design.md`](../design.md) を参照してください。
+設定はすべて任意です — 上記の呼び出し元 workflow 以外のセットアップは不要です。レビュアーを有効化・調整するには `.claude/audit.yml` を作成してください。スキーマとオプションの詳細は [`docs/design.md`](design.md) を参照してください。
 
 ## ドキュメント
 
 - [`docs/overview.md`](overview.md) — パイプラインの動作説明
-- [`docs/design.md`](../design.md) — 設計リファレンス（フル版）
+- [`docs/design.md`](design.md) — 設計リファレンス（フル版）
 - [`docs/why-reusable-workflow.md`](../en/why-reusable-workflow.md) — なぜ step アクションではなく reusable workflow なのか
