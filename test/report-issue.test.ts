@@ -40,4 +40,32 @@ describe('renderIssueMarkdown', () => {
     const r = { ...report, findings: [{ ...report.findings[0], file: 'src/a|b.ts' }] };
     expect(renderIssueMarkdown(r)).toContain('src/a\\|b.ts');
   });
+
+  it('minSeverity filters lower-severity findings out of the issue and recomputes the summary', () => {
+    const r: ConsolidatedReport = {
+      ...report,
+      findings: [
+        { ...report.findings[0], file: 'hi.md', severity: 'high' },
+        { ...report.findings[0], file: 'lo.md', severity: 'low' },
+      ],
+    };
+    const md = renderIssueMarkdown(r, 'medium');
+    expect(md).toContain('hi.md');
+    expect(md).not.toContain('lo.md');
+    expect(md).toMatch(/🟡 Low \| 0/);
+    expect(md).toMatch(/\*\*Total\*\* \| \*\*1\*\*/);
+  });
+
+  it('default minSeverity (low) keeps every finding', () => {
+    const r: ConsolidatedReport = {
+      ...report,
+      findings: [
+        { ...report.findings[0], file: 'hi.md', severity: 'high' },
+        { ...report.findings[0], file: 'lo.md', severity: 'low' },
+      ],
+    };
+    const md = renderIssueMarkdown(r);
+    expect(md).toContain('hi.md');
+    expect(md).toContain('lo.md');
+  });
 });

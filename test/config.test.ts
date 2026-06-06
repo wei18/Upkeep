@@ -38,4 +38,20 @@ describe('config', () => {
       'version: 1\nreviewers:\n  i18n:\n    enabled: true\n');
     expect(loadConfig(dir).reviewers.i18n.enabled).toBe(true);
   });
+
+  it('default ignore is empty', () => {
+    expect(defaultConfig().ignore).toEqual([]);
+  });
+
+  it('parses top-level ignore globs', () => {
+    const merged = mergeConfig(defaultConfig(), { ignore: ['docs/*/plans/**'] } as never);
+    expect(merged.ignore).toEqual(['docs/*/plans/**']);
+  });
+
+  it('maps snake_case report keys (issue_label, min_severity)', () => {
+    const merged = mergeConfig(defaultConfig(),
+      { report: { issue_label: 'health', min_severity: 'high' } } as never);
+    expect(merged.report.issueLabel).toBe('health');
+    expect(merged.report.minSeverity).toBe('high');
+  });
 });

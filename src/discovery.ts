@@ -7,6 +7,7 @@ import { listFiles, isLockfile } from './scan.js';
 import { sha256 } from './hash.js';
 import { lastCommitTimes } from './gitmeta.js';
 import { buildRefGraph } from './refgraph.js';
+import { matchesAny } from './rubric.js';
 import { MAX_FILE_KB } from './types.js';
 import type { Inventory, FileEntry, ConventionSource } from './types.js';
 
@@ -28,7 +29,7 @@ function discoverConventions(repoRoot: string, paths: string[]): ConventionSourc
 
 export function discover(repoRoot: string): Inventory {
   const config = loadConfig(repoRoot);
-  const paths = listFiles(repoRoot);
+  const paths = listFiles(repoRoot).filter((p) => !matchesAny(p, config.ignore ?? []));
   const times = lastCommitTimes(repoRoot, paths);
 
   const raw = paths.flatMap((p) => {

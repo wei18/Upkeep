@@ -1,14 +1,20 @@
 // src/report-issue.ts
-import type { ConsolidatedReport } from './types.js';
+import type { ConsolidatedReport, Severity } from './types.js';
 
 export const ISSUE_MARKER = '<!-- upkeep:report -->';
+
+const RANK: Record<Severity, number> = { low: 0, medium: 1, high: 2 };
 
 function cell(s: string): string {
   return s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 }
 
-export function renderIssueMarkdown(report: ConsolidatedReport): string {
-  const s = report.stats;
+export function renderIssueMarkdown(report: ConsolidatedReport, minSeverity: Severity = 'low'): string {
+  // Findings below minSeverity stay out of the issue (the HTML report keeps everything).
+  const findings = report.findings.filter((f) => RANK[f.severity] >= RANK[minSeverity]);
+  const bySeverity: Record<Severity, number> = { high: 0, medium: 0, low: 0 };
+  for (const f of findings) bySeverity[f.severity]++;
+  const s = { ...report.stats, total: findings.length, bySeverity };
   const L: string[] = [];
   L.push(ISSUE_MARKER);
   L.push('# 🔍 Upkeep Report');
@@ -52,7 +58,7 @@ export function renderIssueMarkdown(report: ConsolidatedReport): string {
   L.push('');
   L.push('| Severity | Conf | File | Category | Reviewers | Problem |');
   L.push('|---|---|---|---|---|---|');
-  for (const f of report.findings) {
+  for (const f of findings) {
     L.push(`| ${f.severity} | ${f.confidence} | \`${cell(f.file)}\` | ${f.category} | ${f.reviewers.join(', ')} | ${cell(f.problem)} |`);
   }
   L.push('');

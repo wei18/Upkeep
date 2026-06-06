@@ -37,6 +37,15 @@ describe('discover', () => {
     expect(inv.conventions.some((c) => c.kind === 'claude_md')).toBe(true);
   });
 
+  it('drops files matching .claude/audit.yml ignore globs from the inventory', () => {
+    const dir = repo();
+    mkdirSync(join(dir, '.claude'));
+    writeFileSync(join(dir, '.claude/audit.yml'), 'ignore:\n  - "assets/**"\n');
+    const inv = discover(dir);
+    expect(inv.files.some((f) => f.path.startsWith('assets/'))).toBe(false);
+    expect(inv.files.some((f) => f.path === 'README.md')).toBe(true);
+  });
+
   it('flags oversized text files', () => {
     const dir = repo();
     writeFileSync(join(dir, 'big.md'), 'x'.repeat(101 * 1024));

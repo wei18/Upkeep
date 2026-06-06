@@ -23,6 +23,7 @@ export interface AuditConfig {
   version: number;
   reviewers: Record<ReviewerName, ReviewerConfig>;
   report: { issueLabel: string; minSeverity: Severity };
+  ignore: string[]; // glob paths dropped from the inventory entirely (all reviewers)
 }
 
 export interface FileEntry {

@@ -45,7 +45,7 @@ function globToRegex(glob: string): RegExp {
   return new RegExp(`^${re}$`);
 }
 
-function matchesAny(path: string, globs: string[]): boolean {
+export function matchesAny(path: string, globs: string[]): boolean {
   return globs.some((g) => globToRegex(g).test(path));
 }
 
