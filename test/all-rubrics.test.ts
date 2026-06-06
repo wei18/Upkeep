@@ -5,11 +5,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { composeRubric } from '../src/rubric.js';
 import { defaultConfig } from '../src/config.js';
-import type { Inventory, ReviewerName } from '../src/types.js';
+import { REVIEWER_NAMES } from '../src/types.js';
+import type { Inventory } from '../src/types.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const inv: Inventory = { repoRoot: '/r', generatedAtISO: 't', config: defaultConfig(), conventions: [], files: [] };
-const ALL: ReviewerName[] = ['docs_staleness', 'code_hygiene', 'spec_flow', 'visual_icon', 'duplicate_orphan', 'convention', 'i18n'];
+const ALL = REVIEWER_NAMES;
 
 describe('all reviewer rubrics exist', () => {
   it('every reviewer has a builtin rubric file at the composed path', () => {

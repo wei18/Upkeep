@@ -1,3 +1,8 @@
 .DS_Store
 node_modules/
 *.log
+
+# Upkeep pipeline outputs (so the dogfood self-audit never scans its own artifacts)
+inventory.json
+findings/
+synthesis.json
