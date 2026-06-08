@@ -28,8 +28,8 @@ describe('consolidate', () => {
     // convention (rank 5) is first in input; on an exact severity×confidence tie,
     // code_hygiene (rank 1) must win the representative slot.
     const outputs: ReviewerOutput[] = [
-      { reviewer: 'convention', status: 'ok', findings: [f({ file: 'x.ts', category: 'code', reviewer: 'convention', problem: 'from-convention', severity: 'high', confidence: 'high' })] },
-      { reviewer: 'code_hygiene', status: 'ok', findings: [f({ file: 'x.ts', category: 'code', reviewer: 'code_hygiene', problem: 'from-code_hygiene', severity: 'high', confidence: 'high' })] },
+      { reviewer: 'convention', status: 'ok', findings: [f({ file: 'x.ts', category: 'inconsistency', reviewer: 'convention', problem: 'from-convention', severity: 'high', confidence: 'high' })] },
+      { reviewer: 'code_hygiene', status: 'ok', findings: [f({ file: 'x.ts', category: 'inconsistency', reviewer: 'code_hygiene', problem: 'from-code_hygiene', severity: 'high', confidence: 'high' })] },
     ];
     const r = consolidate(outputs, null, OPTS);
     expect(r.findings.length).toBe(1);
