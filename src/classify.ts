@@ -33,7 +33,9 @@ export function classify(path: string, content: Buffer): { modality: Modality; c
   if (name.includes('icon') || ext === '.icns' || ext === '.ico') category = 'icon';
   else if (modality === 'raster_image') category = 'visual';
   else if (isSpecPath) category = 'spec'; // 路徑含 spec/specs 區段；避免 *.spec.ts 誤判
-  else if (modality === 'vector_diagram' || /(?:^|[-_])flow(?:[-_.]|$)/.test(name)) category = 'flow';
+  else if (/(?:^|[-_])flow(?:[-_.]|$)/.test(name)) category = 'flow'; // 明確 flow 命名（任何副檔名）
+  else if (ext === '.svg') category = 'visual'; // 通用向量圖形＝設計資產（design §2 → visual_icon）；.mmd/.dot/.puml 才是圖表語言
+  else if (modality === 'vector_diagram') category = 'flow';
   else if (CODE.has(ext)) category = 'code';
   else if (DOC.has(ext)) category = 'doc';
   else if (CONFIG.has(ext)) category = 'config';

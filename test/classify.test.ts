@@ -33,6 +33,17 @@ describe('classify', () => {
     expect(classify('docs/flow.mmd', txt('graph TD; A-->B')))
       .toEqual({ modality: 'vector_diagram', category: 'flow' });
   });
+  it('a generic .svg is a design asset (visual), not a flowchart (design §2)', () => {
+    expect(classify('assets/logo.svg', txt('<svg/>')))
+      .toEqual({ modality: 'vector_diagram', category: 'visual' });
+  });
+  it('a flow-named .svg stays a flowchart', () => {
+    expect(classify('docs/auth-flow.svg', txt('<svg/>')).category).toBe('flow');
+  });
+  it('diagram-language vectors (.dot/.puml) remain flow', () => {
+    expect(classify('docs/graph.dot', txt('digraph{}')).category).toBe('flow');
+    expect(classify('docs/seq.puml', txt('@startuml')).category).toBe('flow');
+  });
   it('binary content with NUL byte', () => {
     expect(classify('data.bin', Buffer.from([1, 0, 2])).modality).toBe('binary');
   });
