@@ -28,7 +28,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (invPath && existsSync(invPath)) {
     try { minSeverity = JSON.parse(readFileSync(invPath, 'utf8'))?.config?.report?.minSeverity ?? 'low'; } catch { /* keep default */ }
   }
+  const runUrl = process.env.UPKEEP_RUN_URL || undefined;
+  const artifactExpiresAtISO = process.env.UPKEEP_ARTIFACT_EXPIRES_AT || undefined;
   writeFileSync(outHtml ?? 'report.html', renderHtml(report));
-  writeFileSync(outIssue ?? 'issue.md', renderIssueMarkdown(report, minSeverity));
+  writeFileSync(outIssue ?? 'issue.md', renderIssueMarkdown(report, minSeverity, { runUrl, artifactExpiresAtISO }));
   process.stdout.write(`report: ${report.stats.total} findings, ${report.themes.length} themes, ${report.stats.failedReviewers.length} failed reviewers\n`);
 }

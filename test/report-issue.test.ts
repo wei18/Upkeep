@@ -54,6 +54,18 @@ describe('renderIssueMarkdown', () => {
     const r = { ...report, findings: [{ ...report.findings[0], file: 'src/a|b.ts' }] };
     expect(renderIssueMarkdown(r)).toContain('src/a\\|b.ts');
   });
+  it('footer links straight to the run and notes artifact expiry when given', () => {
+    const md = renderIssueMarkdown(report, 'low', {
+      runUrl: 'https://github.com/o/r/actions/runs/123',
+      artifactExpiresAtISO: '2026-09-02T00:00:00Z', // 90d after generatedAtISO 2026-06-04
+    });
+    expect(md).toContain('https://github.com/o/r/actions/runs/123');
+    expect(md).toContain('report-html');
+    expect(md).toMatch(/expires 2026-09-02.*90d/);
+  });
+  it('footer falls back to the generic line without run info', () => {
+    expect(renderIssueMarkdown(report)).toContain('see the workflow run HTML artifact');
+  });
 
   it('minSeverity filters lower-severity findings out of the issue and recomputes the summary', () => {
     const r: ConsolidatedReport = {

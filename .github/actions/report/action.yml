@@ -34,6 +34,8 @@ runs:
       continue-on-error: true
     - name: render report
       shell: bash
+      env:
+        UPKEEP_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
         set -euo pipefail
         ROOT="${{ github.action_path }}/../../.."
@@ -47,6 +49,24 @@ runs:
       with:
         name: report-html
         path: ${{ runner.temp }}/report.html
+    - name: add artifact expiry to the issue (best-effort)
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        UPKEEP_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        set -euo pipefail
+        ROOT="${{ github.action_path }}/../../.."
+        # expires_at comes from the uploaded artifact = the repo's effective gh retention setting
+        EXP="$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+          --jq '[.artifacts[] | select(.name=="report-html")][0].expires_at' 2>/dev/null || true)"
+        [ -n "${EXP:-}" ] && [ "$EXP" != "null" ] || exit 0   # keep the run-link-only issue if unavailable
+        export UPKEEP_ARTIFACT_EXPIRES_AT="$EXP"
+        SYN="${{ inputs.target }}/synthesis.json"; [ -f "$SYN" ] || SYN="-"
+        "$ROOT/node_modules/.bin/tsx" "$ROOT/src/report.ts" \
+          "${{ inputs.target }}/findings" "$SYN" \
+          "${{ runner.temp }}/_ignore.html" "${{ runner.temp }}/issue.md" \
+          "${{ inputs.target }}/inventory.json"
     - name: upsert tracking issue
       shell: bash
       env:

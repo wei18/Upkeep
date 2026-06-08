@@ -4,11 +4,32 @@ import { SEVERITY_RANK } from './types.js';
 
 export const ISSUE_MARKER = '<!-- upkeep:report -->';
 
+export interface IssueRenderOpts {
+  runUrl?: string;              // direct link to the workflow run hosting the report-html artifact
+  artifactExpiresAtISO?: string; // artifact expiry (per the repo's gh retention setting)
+}
+
 function cell(s: string): string {
   return s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 }
 
-export function renderIssueMarkdown(report: ConsolidatedReport, minSeverity: Severity = 'low'): string {
+function footer(report: ConsolidatedReport, opts: IssueRenderOpts): string {
+  if (!opts.runUrl) return '_Full interactive report: see the workflow run HTML artifact._';
+  let line = `_Full interactive HTML report: [open this run](${opts.runUrl}) → download the \`report-html\` artifact`;
+  if (opts.artifactExpiresAtISO) {
+    const days = Math.round(
+      (new Date(opts.artifactExpiresAtISO).getTime() - new Date(report.generatedAtISO).getTime()) / 86_400_000,
+    );
+    if (Number.isFinite(days) && days > 0) line += ` (expires ${opts.artifactExpiresAtISO.slice(0, 10)}, ~${days}d)`;
+  }
+  return `${line}._`;
+}
+
+export function renderIssueMarkdown(
+  report: ConsolidatedReport,
+  minSeverity: Severity = 'low',
+  opts: IssueRenderOpts = {},
+): string {
   // Findings below minSeverity stay out of the issue (the HTML report keeps everything).
   const findings = report.findings.filter((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[minSeverity]);
   const bySeverity: Record<Severity, number> = { high: 0, medium: 0, low: 0 };
@@ -62,6 +83,6 @@ export function renderIssueMarkdown(report: ConsolidatedReport, minSeverity: Sev
     L.push(`| ${f.severity} | ${f.confidence} | \`${cell(f.file)}\` | ${f.category} | ${f.reviewers.join(', ')} | ${cell(f.problem)} |`);
   }
   L.push('');
-  L.push('_Full interactive report: see the workflow run HTML artifact._');
+  L.push(footer(report, opts));
   return L.join('\n');
 }
