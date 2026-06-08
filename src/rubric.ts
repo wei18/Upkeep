@@ -12,7 +12,7 @@ const DOMAINS: Record<ReviewerName, Category[]> = {
   visual_icon: ['visual', 'icon'],
   duplicate_orphan: ALL,
   convention: ALL,
-  i18n: ['doc'], // v1：多語 doc；code 層在地化字串待 Plan 4
+  i18n: [], // 空 placeholder：i18n 只管 code 層在地化字串（design §2.1），該分類待 Plan 4；留空確保啟用時不與 docs_staleness 的多語 doc 範疇重疊
 };
 
 export interface RubricBundle {
