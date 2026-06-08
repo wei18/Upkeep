@@ -20,4 +20,23 @@ describe('refgraph', () => {
     ];
     expect(buildRefGraph(files).get('a.md')).toEqual([]);
   });
+
+  it('matches the .js specifier of a TS source (ESM/NodeNext imports), so it is not a false orphan', () => {
+    const files = [
+      { path: 'src/discovery.ts', modality: 'text' as const, content: Buffer.from("import { classify } from './classify.js';") },
+      { path: 'src/classify.ts', modality: 'text' as const, content: Buffer.from('export const classify = 1;') },
+    ];
+    expect(buildRefGraph(files).get('src/classify.ts')).toEqual(['src/discovery.ts']);
+  });
+
+  it('does not match a basename embedded in a longer filename (substring false positive)', () => {
+    const files = [
+      { path: 'docs/x.md', modality: 'text' as const, content: Buffer.from('see report-issue.ts and find-issue.ts') },
+      { path: 'src/issue.ts', modality: 'text' as const, content: Buffer.from('export const issue = 1;') },
+      { path: 'src/report-issue.ts', modality: 'text' as const, content: Buffer.from('// report issue') },
+    ];
+    const g = buildRefGraph(files);
+    expect(g.get('src/issue.ts')).toEqual([]); // report-issue.ts is not a reference to issue.ts
+    expect(g.get('src/report-issue.ts')).toEqual(['docs/x.md']);
+  });
 });
