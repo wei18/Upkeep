@@ -41,7 +41,7 @@ jobs:
 
 **Requirements**
 
-- A repo secret named `CLAUDE_CODE_OAUTH_TOKEN` — generate it locally with `claude setup-token` (available to Claude Pro/Max subscribers; usage counts against your subscription). Alternatively, swap the workflow input to `anthropic_api_key` for usage-based API billing.
+- A repo secret named `CLAUDE_CODE_OAUTH_TOKEN` — generate it locally with `claude setup-token` (available to Claude Pro/Max subscribers; usage counts against your subscription).
 - The `permissions` block shown above (`contents: read` + `issues: write` + `id-token: write`).
 
 **Outputs**

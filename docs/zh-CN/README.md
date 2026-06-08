@@ -41,7 +41,7 @@ jobs:
 
 **前置条件**
 
-- 仓库中需配置名为 `CLAUDE_CODE_OAUTH_TOKEN` 的 secret——在本地执行 `claude setup-token` 生成（需 Claude Pro/Max 订阅，用量计入订阅额度）。如需按量付费，可将 workflow input 改为 `anthropic_api_key`。
+- 仓库中需配置名为 `CLAUDE_CODE_OAUTH_TOKEN` 的 secret——在本地执行 `claude setup-token` 生成（需 Claude Pro/Max 订阅，用量计入订阅额度）。
 - 需包含上述 `permissions` 块（`contents: read` + `issues: write` + `id-token: write`）。
 
 **输出**

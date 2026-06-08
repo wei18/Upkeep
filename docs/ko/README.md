@@ -41,7 +41,7 @@ jobs:
 
 **사전 요구 사항**
 
-- `CLAUDE_CODE_OAUTH_TOKEN`라는 이름의 저장소 secret — 로컬에서 `claude setup-token`을 실행하여 생성하십시오(Claude Pro/Max 구독 필요, 사용량은 구독에서 차감됩니다). 사용량 기반 API 과금을 원하신다면 workflow input을 `anthropic_api_key`로 교체하십시오.
+- `CLAUDE_CODE_OAUTH_TOKEN`라는 이름의 저장소 secret — 로컬에서 `claude setup-token`을 실행하여 생성하십시오(Claude Pro/Max 구독 필요, 사용량은 구독에서 차감됩니다).
 - 위에 표시된 `permissions` 블록 (`contents: read` + `issues: write` + `id-token: write`).
 
 **출력**
