@@ -271,7 +271,6 @@ Principle: failures within the Review/Synthesis stage are always isolated and de
 
 - 100 KB/file limit + skip binaries/lockfiles/build artifacts (§5, §7)
 - **Tiered reading**: send file list + summaries first; reviewers request deep reads on specific files — never blindly stuff full file contents
-- `max_files_per_reviewer` safety valve (default 300); when exceeded, the lead selects the top N by "recently touched in commits + high reference count," and the report notes "truncated"
 - HTML / issue assembly is pure string processing — **zero LLM cost**
 
 ---

@@ -271,7 +271,6 @@ repo-audit-action/                   # 本地目錄（發佈名 Upkeep）
 
 - 100KB／檔上限 + 跳過 binary/lockfile/build（§5、§7）
 - **分層送讀**：先送清單＋摘要，由 reviewer 點名深讀，不無腦全文塞入
-- `max_files_per_reviewer` 安全閥（預設 300）；超過時 lead 依「近期 commit 觸及 + 高引用度」取前 N，報告註明「已截斷」
 - HTML / issue 組裝是純文字，**零 LLM 成本**
 
 ---
