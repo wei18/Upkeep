@@ -20,6 +20,11 @@ export function renderIssueMarkdown(report: ConsolidatedReport, minSeverity: Sev
   L.push('');
   L.push(`_Generated ${report.generatedAtISO}_`);
   L.push('');
+  if (s.failedReviewers.length > 0) {
+    L.push(`> ⚠️ **INCOMPLETE RUN** — ${s.failedReviewers.length} reviewer(s) failed (${s.failedReviewers.join(', ')}). `
+      + 'Findings below are partial; an empty or low count **does not mean the repo is clean.**');
+    L.push('');
+  }
   if (report.synthesisStatus !== 'ok') {
     L.push(`> Synthesis ${report.synthesisStatus} — showing raw findings only.`);
     L.push('');
@@ -37,10 +42,6 @@ export function renderIssueMarkdown(report: ConsolidatedReport, minSeverity: Sev
   L.push(`| 🟡 Low | ${s.bySeverity.low} |`);
   L.push(`| **Total** | **${s.total}** |`);
   L.push('');
-  if (s.failedReviewers.length > 0) {
-    L.push(`> ⚠️ Reviewers that failed this run (results incomplete): ${s.failedReviewers.join(', ')}`);
-    L.push('');
-  }
   if (report.themes.length > 0) {
     L.push('## Themes');
     L.push('');

@@ -36,6 +36,20 @@ describe('renderIssueMarkdown', () => {
   it('warns about failed reviewers', () => {
     expect(renderIssueMarkdown(report)).toMatch(/i18n/);
   });
+  it('flags the run INCOMPLETE when reviewers failed, so an empty result is not read as clean', () => {
+    const md = renderIssueMarkdown(report);
+    expect(md).toContain('INCOMPLETE');
+    // the warning must come before the Summary table, not buried under it
+    expect(md.indexOf('INCOMPLETE')).toBeLessThan(md.indexOf('## Summary'));
+    expect(md).toMatch(/does not mean/i);
+  });
+  it('does not flag INCOMPLETE when every reviewer ran', () => {
+    const r: ConsolidatedReport = {
+      ...report,
+      stats: { ...report.stats, failedReviewers: [] },
+    };
+    expect(renderIssueMarkdown(r)).not.toContain('INCOMPLETE');
+  });
   it('escapes pipes in a file path so the table is not broken', () => {
     const r = { ...report, findings: [{ ...report.findings[0], file: 'src/a|b.ts' }] };
     expect(renderIssueMarkdown(r)).toContain('src/a\\|b.ts');
