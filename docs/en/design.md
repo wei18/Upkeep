@@ -1,7 +1,7 @@
 # Upkeep — Design Document
 
-- Status: Design finalized, implementation plan pending
-- Date: 2026-06-04
+- Status: Implemented and shipped as v1 — this spec tracks the shipped behavior
+- Date: 2026-06-04 (design); shipped 2026-06-05
 - Location: Standalone repo `upkeep/`, spec at `docs/design.md` (see §6)
 - Self-constraint: **This spec is the SSOT and must stay up-to-date as implementation evolves** (this tool exists to catch drift — the spec itself must not drift)
 
@@ -99,6 +99,8 @@ Built-in default rubric (shipped with the action; defines what this specialty lo
 
 When a repo has its own standards, those take priority. `convention` relies almost entirely on the repo's own conventions; `visual_icon` relies mainly on built-in defaults plus the repo's design guidelines (if any exist).
 
+**Reviewer rubric language (`rubric_lang`)**: the built-in rubrics ship per-locale under `reviewers/<locale>/` (e.g. `reviewers/en/`, `reviewers/zh-TW/`). The `rubric_lang` workflow input (default `en`) selects which set the reviewers and synthesis use.
+
 ### 2.1 Multilingual Doc-Set Sync Detection
 
 Handled by `docs_staleness` (not `i18n` — `i18n` manages code-layer localization strings such as `.lproj`/`Localizable.strings`; documentation translation drift is a doc concern).
@@ -193,6 +195,8 @@ report:
   min_severity: "low"    # below this does not enter the issue (still in the full HTML report)
 ```
 
+> Config keys are shown in `snake_case` (`issue_label`, `min_severity`); both `snake_case` and the internal `camelCase` (`issueLabel`, `minSeverity`) are accepted.
+
 ### Auto-Inference (no configuration required)
 
 - **Scan scope**: respects the repo's `.gitignore`; automatically skips binaries, lockfiles, and build artifacts; text files have a built-in 100 KB limit (see §7 modality routing).
@@ -218,7 +222,7 @@ repo-audit-action/                   # local directory (published name: Upkeep)
 │   ├── zh-TW/   README.md  overview.md  design.md  plans/
 │   ├── zh-CN/ … ja/ … ko/   (one set per language, same as above)
 │   └── (all multilingual user docs under docs/<locale>/; root README.md is the en base)
-├── reviewers/                       # 7 built-in reviewer rubrics + _reviewer-prompt + _synthesis-prompt
+├── reviewers/<locale>/              # 7 built-in rubrics + _reviewer-prompt + _synthesis-prompt, per locale (en, zh-TW); picked by rubric_lang
 ├── src/                             # deterministic TS: discovery/consolidate/report/matrix/prompt-bundle, etc.
 └── test/                            # unit + contract + e2e (samples in §10)
 ```

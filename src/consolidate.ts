@@ -1,14 +1,13 @@
 // src/consolidate.ts
 import type {
-  ReviewerOutput, Finding, ReviewerName, Severity, Confidence, Theme,
+  ReviewerOutput, Finding, ReviewerName, Severity, Theme,
   SynthesisOutput, ConsolidatedFinding, ConsolidatedReport, ReportStats,
 } from './types.js';
-
-const SEV: Record<Severity, number> = { high: 3, medium: 2, low: 1 };
-const CONF: Record<Confidence, number> = { high: 3, medium: 2, low: 1 };
+import { SEVERITY_RANK } from './types.js';
 
 function cmp(a: Finding, b: Finding): number {
-  return (SEV[b.severity] - SEV[a.severity]) || (CONF[b.confidence] - CONF[a.confidence]);
+  return (SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity])
+    || (SEVERITY_RANK[b.confidence] - SEVERITY_RANK[a.confidence]);
 }
 function uniq<T>(xs: T[]): T[] {
   return [...new Set(xs)];

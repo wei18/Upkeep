@@ -2,6 +2,10 @@
 export const SEVERITIES = ['low', 'medium', 'high'] as const;
 export type Severity = typeof SEVERITIES[number];
 
+/** Ordinal rank per severity (low=0 … high=2); also valid for Confidence (same domain). */
+export const SEVERITY_RANK: Record<Severity, number> =
+  Object.fromEntries(SEVERITIES.map((s, i) => [s, i])) as Record<Severity, number>;
+
 export const REVIEWER_NAMES = [
   'docs_staleness', 'code_hygiene', 'spec_flow',
   'visual_icon', 'duplicate_orphan', 'convention', 'i18n',

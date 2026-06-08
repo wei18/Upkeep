@@ -1,9 +1,8 @@
 // src/report-issue.ts
 import type { ConsolidatedReport, Severity } from './types.js';
+import { SEVERITY_RANK } from './types.js';
 
 export const ISSUE_MARKER = '<!-- upkeep:report -->';
-
-const RANK: Record<Severity, number> = { low: 0, medium: 1, high: 2 };
 
 function cell(s: string): string {
   return s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
@@ -11,7 +10,7 @@ function cell(s: string): string {
 
 export function renderIssueMarkdown(report: ConsolidatedReport, minSeverity: Severity = 'low'): string {
   // Findings below minSeverity stay out of the issue (the HTML report keeps everything).
-  const findings = report.findings.filter((f) => RANK[f.severity] >= RANK[minSeverity]);
+  const findings = report.findings.filter((f) => SEVERITY_RANK[f.severity] >= SEVERITY_RANK[minSeverity]);
   const bySeverity: Record<Severity, number> = { high: 0, medium: 0, low: 0 };
   for (const f of findings) bySeverity[f.severity]++;
   const s = { ...report.stats, total: findings.length, bySeverity };

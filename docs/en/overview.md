@@ -8,7 +8,7 @@ Periodic human review catches some of it, but it requires keeping the full conte
 
 ## The pipeline: fan-out → synthesis → report
 
-Upkeep runs as a reusable `workflow_call` workflow composed of four deterministic stages.
+Upkeep runs as a reusable `workflow_call` workflow composed of four stages: Discovery and Report are deterministic (no LLM); the parallel reviewers and Synthesis are the LLM-driven stages.
 
 **1. Discovery**
 
