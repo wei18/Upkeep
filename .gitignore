@@ -2,6 +2,9 @@
 node_modules/
 *.log
 
+# tsc build output (a stray `npm run build` otherwise makes vitest glob dist/test/*.js and fail)
+dist/
+
 # Upkeep pipeline outputs (so the dogfood self-audit never scans its own artifacts)
 inventory.json
 findings/
