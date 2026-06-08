@@ -29,7 +29,7 @@ jobs:
     outputs:
       reviewers: ${{ steps.d.outputs.reviewers }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - id: d
         uses: wei18/upkeep/.github/actions/discovery@v1
 
@@ -41,7 +41,7 @@ jobs:
       matrix:
         reviewer: ${{ fromJSON(needs.discovery.outputs.reviewers) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: wei18/upkeep/.github/actions/reviewer@v1
         with:
           reviewer: ${{ matrix.reviewer }}
@@ -56,7 +56,7 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: wei18/upkeep/.github/actions/synthesis@v1
         with:
           model: ${{ inputs.model }}
@@ -70,7 +70,7 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: wei18/upkeep/.github/actions/report@v1
         with:
           issue_label: ${{ inputs.issue_label }}

@@ -11,7 +11,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v5
+    - uses: actions/setup-node@v6
       with:
         node-version: '20'
     - name: install upkeep deps
@@ -25,7 +25,7 @@ runs:
         ROOT="${{ github.action_path }}/../../.."
         "$ROOT/node_modules/.bin/tsx" "$ROOT/src/discovery.ts" "${{ inputs.target }}" "${{ inputs.target }}/inventory.json"
         "$ROOT/node_modules/.bin/tsx" "$ROOT/src/matrix.ts" "${{ inputs.target }}" "$GITHUB_OUTPUT"
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: inventory
         path: ${{ inputs.target }}/inventory.json

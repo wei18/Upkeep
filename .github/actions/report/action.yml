@@ -10,24 +10,24 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v5
+    - uses: actions/setup-node@v6
       with:
         node-version: '20'
     - name: install upkeep deps
       shell: bash
       working-directory: ${{ github.action_path }}/../../..
       run: npm ci
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         pattern: findings-*
         path: ${{ inputs.target }}/findings
         merge-multiple: true
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: synthesis
         path: ${{ inputs.target }}
       continue-on-error: true
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: inventory
         path: ${{ inputs.target }}
@@ -43,7 +43,7 @@ runs:
           "${{ inputs.target }}/findings" "$SYN" \
           "${{ runner.temp }}/report.html" "${{ runner.temp }}/issue.md" \
           "${{ inputs.target }}/inventory.json"
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: report-html
         path: ${{ runner.temp }}/report.html

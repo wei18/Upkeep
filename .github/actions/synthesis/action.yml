@@ -18,18 +18,18 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v5
+    - uses: actions/setup-node@v6
       with:
         node-version: '20'
     - name: install upkeep deps
       shell: bash
       working-directory: ${{ github.action_path }}/../../..
       run: npm ci
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         name: inventory
         path: ${{ inputs.target }}
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         pattern: findings-*
         path: ${{ inputs.target }}/findings
@@ -58,7 +58,7 @@ runs:
         "$ROOT/node_modules/.bin/tsx" "$ROOT/src/finalize.ts" synthesis "${{ inputs.target }}/synthesis.json"
     - name: upload synthesis
       if: always()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: synthesis
         path: ${{ inputs.target }}/synthesis.json
