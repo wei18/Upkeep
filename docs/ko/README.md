@@ -4,6 +4,8 @@
 
 저장소의 문서, 명세, 에셋이 실제 코드와 일치하는지 주기적으로 검사하여 드리프트가 누적되기 전에 잡아내는 재사용 가능한 GitHub Actions workflow입니다.
 
+> 💳 **별도의 API 청구가 없습니다.** Upkeep은 기존 **Claude Pro/Max 구독**(`claude setup-token`을 통한 OAuth)으로 동작합니다 — Anthropic API 키 불필요, 토큰 과금 없음. 또한 **출력 전용**으로, 드리프트를 근거와 심각도와 함께 보고하지만 파일을 편집하거나 삭제하지 않습니다.
+
 ## 주요 기능
 
 - 저장소를 스캔하고, Anthropic의 `claude-code-action` 기반 **전문화된 AI 리뷰어 팀**을 병렬로 실행합니다.
@@ -11,6 +13,19 @@
 - **근거와 함께 불일치를 보고합니다** — 어느 한 쪽이 항상 정답이라고 가정하지 않습니다.
 - **파일을 수정하거나 삭제하지 않습니다** — 출력 전용입니다.
 - 독립 실행형 **HTML 보고서**(workflow artifact)와 **지속적인 GitHub 추적 이슈**(upsert 방식, 중복 없음)를 생성합니다.
+
+## 다른 도구와의 차이
+
+Upkeep은 linter도 PR bot도 아닌, **저장소 전체를 대상으로 하는 의미적 드리프트 감사 도구**입니다. 역할이 다릅니다:
+
+| | **Upkeep** | Danger | Copilot / Cursor PR review |
+|---|---|---|---|
+| 검사 범위 | **저장소 전체** — 문서, 명세, 에셋, 컨벤션 | PR의 diff | PR의 diff |
+| 찾는 것 | **의미적 드리프트**(README는 X라는데 코드는 Y) | **직접 작성한** 규칙 위반 | diff 내 코드 문제 |
+| 기준 | 저장소 **자체** 컨벤션 | 사용자 정의 규칙 | 일반 코드 지식 |
+| 주기 | 예약 또는 온디맨드, 저장소 전체 | PR마다 | PR마다 |
+| 코드를 수정하나요? | **절대 안 함** — 출력만 | 안 함 | 변경 제안 |
+| 비용 | 당신의 **Claude Pro/Max** 플랜 | 무료(로직 직접 작성) | Copilot/Cursor 구독 |
 
 ## 사용 방법
 
@@ -47,7 +62,7 @@ jobs:
 **출력**
 
 - `audit` 레이블이 붙은 GitHub 이슈 — 매 실행마다 동일한 이슈가 업데이트됩니다(upsert). 중복 생성되지 않습니다.
-- `report-html` workflow artifact로 업로드되는 독립 실행형 HTML 보고서.
+- `report-html` workflow artifact로 업로드되는 독립 실행형 HTML 보고서. 추적 이슈에서 바로 링크됩니다. 그 외에는 해당 run의 **Artifacts**(Actions → 해당 run)에서 찾거나 `gh run download <run-id> -n report-html`으로 받을 수 있습니다. GitHub artifact는 다운로드 가능한 zip이며, 저장소의 보존 설정에 따라 만료됩니다.
 
 ## 리뷰어
 

@@ -4,6 +4,8 @@
 
 一个可复用的 GitHub Actions workflow，持续检查仓库中的文档、规范与资源是否与代码保持一致，在偏差积累成问题之前将其捕获。
 
+> 💳 **不会多一笔 API 账单。** Upkeep 跑在你现有的 **Claude Pro/Max 订阅**（通过 `claude setup-token` 的 OAuth）——不需要 Anthropic API key、没有按 token 计费。而且它**只输出、不动手**：报告偏差时附证据与严重度，但绝不修改或删除你的文件。
+
 ## 功能说明
 
 - 扫描仓库，并行调度一组**各司其职的 AI 审查器**（由 Anthropic 的 `claude-code-action` 驱动）。
@@ -11,6 +13,19 @@
 - **以证据呈现偏差** — 不预设某一产物一定是权威来源。
 - **从不编辑或删除任何内容** — 仅输出报告。
 - 生成独立的 **HTML 报告**（workflow artifact）和**持久化 GitHub 跟踪 issue**（upsert 方式，不重复创建）。
+
+## 与其他工具的差异
+
+Upkeep 不是 linter，也不是 PR bot——它是**跨整个仓库的语义级漂移审查器**。不同工具、不同分工：
+
+| | **Upkeep** | Danger | Copilot / Cursor PR review |
+|---|---|---|---|
+| 检查范围 | **整个仓库**——文档、规范、资源、约定 | 单个 PR 的 diff | 单个 PR 的 diff |
+| 发现什么 | **语义级漂移**（README 说 X、代码做 Y） | **你自己手写**的规则违反 | diff 里的代码问题 |
+| 依据 | 你仓库**自己的**约定 | 你的自定义规则 | 通用代码知识 |
+| 频率 | 定时或按需，全仓库 | 每个 PR | 每个 PR |
+| 会改你的代码吗？ | **绝不**——只输出 | 不会 | 会建议修改 |
+| 成本 | 你的 **Claude Pro/Max** 订阅 | 免费（逻辑要自己写） | Copilot/Cursor 订阅 |
 
 ## 使用方式
 
@@ -47,7 +62,7 @@ jobs:
 **输出**
 
 - 一个标记为 `audit` 的 GitHub issue — 每次运行时更新同一个 issue（upsert），不重复创建。
-- 一个独立 HTML 报告，作为 `report-html` workflow artifact 上传。
+- 一个独立 HTML 报告，作为 `report-html` workflow artifact 上传。跟踪 issue 会直接链接到它；否则可在该次 run 的 **Artifacts**（Actions → 那次 run）找到，或用 `gh run download <run-id> -n report-html` 下载。GitHub 的 artifact 是可下载的 zip，并按你仓库的保留设置过期。
 
 ## 审查器
 

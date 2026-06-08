@@ -4,6 +4,8 @@
 
 リポジトリのドキュメント・仕様・アセットの整合性を維持するための再利用可能な GitHub Actions workflow です。ドリフトが蓄積する前に検出します。
 
+> 💳 **追加の API 請求は発生しません。** Upkeep は既存の **Claude Pro/Max サブスクリプション**（`claude setup-token` による OAuth）で動作します——Anthropic API キー不要、トークン課金なし。さらに**出力のみ**で、ドリフトを根拠と重大度を添えて報告しますが、ファイルを編集・削除することは一切ありません。
+
 ## 概要
 
 - リポジトリをスキャンし、Anthropic の `claude-code-action` を活用した**専任 AI レビュアーチーム**を並列で実行します。
@@ -11,6 +13,19 @@
 - **証拠を添えて乖離を報告**します — いずれかのアーティファクトが常に正解とは判断しません。
 - **ファイルの編集・削除は一切行いません** — 出力のみです。
 - 独立した **HTML レポート**（workflow artifact）と**永続的な GitHub トラッキング issue**（upsert 方式、重複なし）を生成します。
+
+## 他ツールとの違い
+
+Upkeep は linter でも PR bot でもなく、**リポジトリ全体を対象とした意味的ドリフト監査ツール**です。役割が異なります：
+
+| | **Upkeep** | Danger | Copilot / Cursor PR review |
+|---|---|---|---|
+| 対象 | **リポジトリ全体**——ドキュメント・仕様・アセット・規約 | PR の diff | PR の diff |
+| 検出するもの | **意味的ドリフト**（README は X と書くがコードは Y） | **自分で書く**ルール違反 | diff 内のコード問題 |
+| 基準 | リポジトリ**自身の**規約 | 自作ルール | 一般的なコード知識 |
+| 実行頻度 | スケジュール／オンデマンド、リポジトリ全体 | PR ごと | PR ごと |
+| コードを編集する？ | **しない**——出力のみ | しない | 変更を提案 |
+| コスト | あなたの **Claude Pro/Max** プラン | 無料（ロジックは自作） | Copilot/Cursor のサブスク |
 
 ## 使い方
 
@@ -47,7 +62,7 @@ jobs:
 **出力**
 
 - `audit` ラベル付きの GitHub issue — 毎回同じ issue が更新（upsert）され、重複は作成されません。
-- `report-html` workflow artifact としてアップロードされる独立した HTML レポート。
+- `report-html` workflow artifact としてアップロードされる独立した HTML レポート。トラッキング issue から直接リンクされます。それ以外では、その run の **Artifacts**（Actions → 該当 run）から、または `gh run download <run-id> -n report-html` で取得できます。GitHub の artifact はダウンロード可能な zip で、リポジトリの保持設定に従って期限切れになります。
 
 ## レビュアー
 

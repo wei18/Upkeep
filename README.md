@@ -4,6 +4,8 @@
 
 A reusable GitHub Actions workflow that keeps your repo's docs, specs, and assets honest — catching drift before it compounds.
 
+> 💳 **No separate API bill.** Upkeep runs on your existing **Claude Pro/Max subscription** (OAuth via `claude setup-token`) — no Anthropic API key, no per-token billing. And it's **output-only**: it reports drift with evidence and severity, but never edits or deletes your files.
+
 ## What it does
 
 - Scans a repository and dispatches a team of **focused AI reviewers** (powered by Anthropic's `claude-code-action`) in parallel.
@@ -11,6 +13,19 @@ A reusable GitHub Actions workflow that keeps your repo's docs, specs, and asset
 - **Reports divergence with evidence** — it does not assume one artifact is always the source of truth.
 - **Never edits or deletes anything** — output only.
 - Produces a self-contained **HTML report** (workflow artifact) and a **persistent GitHub tracking issue** (upserted, never duplicated).
+
+## How it compares
+
+Upkeep isn't a linter or a PR bot — it's a **whole-repo, semantic drift auditor**. Different tool, different job:
+
+| | **Upkeep** | Danger | Copilot / Cursor PR review |
+|---|---|---|---|
+| Looks at | The **whole repo** — docs, specs, assets, conventions | A PR's diff | A PR's diff |
+| Finds | **Semantic drift** (README promises X, code does Y) | Rule violations **you hand-write** | Code issues in the diff |
+| Rubric | Your repo's **own** conventions | Your custom rules | General code knowledge |
+| Cadence | Scheduled or on-demand, repo-wide | Per PR | Per PR |
+| Edits your code? | **Never** — output only | No | Suggests changes |
+| Cost | Your **Claude Pro/Max** plan | Free (you write the logic) | Copilot/Cursor subscription |
 
 ## Usage
 
@@ -47,7 +62,7 @@ jobs:
 **Outputs**
 
 - A GitHub issue labeled `audit` — the same issue is updated on every run (upserted), not duplicated.
-- A self-contained HTML report uploaded as the `report-html` workflow artifact.
+- A self-contained HTML report uploaded as the `report-html` workflow artifact. The tracking issue links straight to it; otherwise find it under the run's **Artifacts** (Actions → the run) or grab it with `gh run download <run-id> -n report-html`. GitHub serves artifacts as a downloadable zip, and they expire per your repo's retention setting.
 
 ## Reviewers
 
