@@ -8,7 +8,7 @@
 
 ## 파이프라인: fan-out → 종합 → 보고
 
-Upkeep은 네 개의 결정적(deterministic) 단계로 구성된 재사용 가능한 `workflow_call` workflow로 실행됩니다.
+Upkeep은 네 개의 단계로 구성된 재사용 가능한 `workflow_call` workflow로 실행됩니다. Discovery와 Report는 결정적(LLM 없음)이며, 병렬 reviewers와 Synthesis가 LLM 기반 단계입니다.
 
 **1. 탐색(Discovery)**
 

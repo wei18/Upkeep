@@ -8,7 +8,7 @@ Repo 會隨時間累積偏差。函式重構了，但文件區塊仍停留在舊
 
 ## Pipeline 架構：展開 → 彙整 → 報告
 
-Upkeep 以可重用的 `workflow_call` workflow 形式運行，由四個確定性階段組成。
+Upkeep 以可重用的 `workflow_call` workflow 形式運行，由四個階段組成：Discovery 與 Report 為確定性（無 LLM）；平行的 reviewers 與 Synthesis 才是 LLM 驅動的階段。
 
 **1. 探索（Discovery）**
 

@@ -8,7 +8,7 @@
 
 ## 流水线：扇出 → 汇总 → 报告
 
-Upkeep 以可复用的 `workflow_call` workflow 形式运行，由四个确定性阶段组成。
+Upkeep 以可复用的 `workflow_call` workflow 形式运行，由四个阶段组成：Discovery 与 Report 为确定性（无 LLM）；并行的 reviewers 与 Synthesis 才是 LLM 驱动的阶段。
 
 **1. 发现（Discovery）**
 

@@ -8,7 +8,7 @@
 
 ## パイプライン: ファンアウト → 統合 → レポート
 
-Upkeep は4つの決定論的ステージで構成される再利用可能な `workflow_call` workflow として動作します。
+Upkeep は4つのステージで構成される再利用可能な `workflow_call` workflow として動作します。Discovery と Report は決定論的（LLM なし）であり、並列の reviewers と Synthesis が LLM 駆動のステージです。
 
 **1. ディスカバリー**
 
