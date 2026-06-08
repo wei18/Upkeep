@@ -13,7 +13,7 @@ function commitRepo(): string {
   execFileSync('git', ['init', '-q'], { cwd: dir });
   writeFileSync(join(dir, 'tracked.ts'), 'x');
   execFileSync('git', ['add', '-A'], { cwd: dir });
-  execFileSync('git', ['commit', '-qm', 'init'], { cwd: dir, env });
+  execFileSync('git', ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'init'], { cwd: dir, env });
   writeFileSync(join(dir, 'untracked.ts'), 'x');
   return dir;
 }

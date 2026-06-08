@@ -17,7 +17,7 @@ function repo(): string {
   writeFileSync(join(dir, 'assets/logo.png'), Buffer.from([0x89, 0x50]));
   writeFileSync(join(dir, 'assets/orphan.png'), Buffer.from([0x89, 0x50]));
   execFileSync('git', ['add', '-A'], { cwd: dir });
-  execFileSync('git', ['commit', '-qm', 'init'], { cwd: dir, env });
+  execFileSync('git', ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'init'], { cwd: dir, env });
   return dir;
 }
 
@@ -66,9 +66,9 @@ describe('discover', () => {
     execFileSync('git', ['init', '-q'], { cwd: sub });
     writeFileSync(join(sub, 'x.txt'), 'y');
     execFileSync('git', ['add', '-A'], { cwd: sub });
-    execFileSync('git', ['commit', '-qm', 's'], { cwd: sub, env });
+    execFileSync('git', ['-c', 'commit.gpgsign=false', 'commit', '-qm', 's'], { cwd: sub, env });
     execFileSync('git', ['add', 'a.ts', 'sub'], { cwd: dir });
-    execFileSync('git', ['commit', '-qm', 'init'], { cwd: dir, env });
+    execFileSync('git', ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'init'], { cwd: dir, env });
 
     const inv = discover(dir);
     expect(inv.files.some((f) => f.path === 'a.ts')).toBe(true);
