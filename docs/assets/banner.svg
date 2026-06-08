@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Upkeep — your AI writes fast, Upkeep keeps it honest. A repo drift auditor.">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#0A0E1A"/>
+      <stop offset="1" stop-color="#12182C"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4FE3C1"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- faint auditor motif: an oversized magnifier on the right -->
+  <g stroke="url(#accent)" fill="none" opacity="0.09">
+    <circle cx="1090" cy="296" r="160" stroke-width="10"/>
+    <line x1="1203" y1="409" x2="1262" y2="468" stroke-width="14" stroke-linecap="round"/>
+  </g>
+
+  <!-- top hairline -->
+  <rect x="0" y="0" width="1280" height="4" fill="url(#accent)" opacity="0.55"/>
+
+  <!-- accent bar anchoring the headline -->
+  <rect x="96" y="190" width="6" height="170" rx="3" fill="url(#accent)"/>
+
+  <g font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <text x="130" y="236" font-size="50" font-weight="500" fill="#9AA6BC">Your AI writes fast.</text>
+    <text x="128" y="322" font-size="78" font-weight="800" fill="#E8EEF6" letter-spacing="-1">Upkeep keeps it <tspan fill="#5EEAD4">honest.</tspan></text>
+    <text x="130" y="392" font-size="25" font-weight="500" fill="#7E8AA0">repo drift auditor&#160; ·&#160; reports with evidence&#160; ·&#160; <tspan fill="#9AA6BC">never auto-edits</tspan></text>
+  </g>
+
+  <!-- wordmark, bottom-right -->
+  <g transform="translate(1038,560)">
+    <circle cx="0" cy="-9" r="13" fill="none" stroke="#5EEAD4" stroke-width="3"/>
+    <line x1="9" y1="0" x2="22" y2="13" stroke="#5EEAD4" stroke-width="3" stroke-linecap="round"/>
+    <text x="38" y="0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#E8EEF6">Upkeep</text>
+  </g>
+</svg>

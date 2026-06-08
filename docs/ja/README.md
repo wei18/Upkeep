@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../assets/banner.svg" alt="Upkeep — your AI writes fast, Upkeep keeps it honest" width="100%">
+</p>
+
 # Upkeep
 
 [English](../../README.md) · [繁體中文](../zh-TW/README.md) · [简体中文](../zh-CN/README.md) · **日本語** · [한국어](../ko/README.md)
