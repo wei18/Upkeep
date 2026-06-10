@@ -68,6 +68,35 @@ jobs:
 - A GitHub issue labeled `audit` — the same issue is updated on every run (upserted), not duplicated.
 - A self-contained HTML report uploaded as the `report-html` workflow artifact. The tracking issue links straight to it; otherwise find it under the run's **Artifacts** (Actions → the run) or grab it with `gh run download <run-id> -n report-html`. GitHub serves artifacts as a downloadable zip, and they expire per your repo's retention setting.
 
+## Run locally
+
+The same audit pipeline also runs on your machine — no GitHub Actions, no secrets, no GitHub permissions.
+
+**Via Claude Code skill** — copy [`skills/upkeep-audit/`](skills/upkeep-audit/) into `~/.claude/skills/`, then ask in any Claude Code session:
+
+> Run an upkeep audit on /path/to/repo
+
+On first use the skill clones Upkeep into `~/.cache/upkeep` and installs dependencies automatically.
+
+**Via plain script** (no Claude Code session needed):
+
+```bash
+git clone --depth 1 https://github.com/wei18/upkeep ~/.cache/upkeep
+cd ~/.cache/upkeep && npm ci
+./scripts/local-audit.sh /path/to/repo --out ~/upkeep-report.html
+```
+
+| Flag | Default | CI equivalent |
+|---|---|---|
+| `--model` | `claude-opus-4-8` | `model` |
+| `--rubric-lang` | `en` | `rubric_lang` |
+| `--max-turns` | `30` | `max_turns` |
+| `--out` | `./upkeep-report.html` | report artifact |
+
+**Requirements:** a logged-in `claude` CLI (Pro/Max; no `setup-token` and no GitHub access needed), Node 20+, git.
+
+**Output:** the same self-contained `report.html` plus a terminal summary. Local runs never create GitHub issues.
+
 ## Reviewers
 
 | Name | Default | Checks |
