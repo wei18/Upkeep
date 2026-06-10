@@ -70,6 +70,10 @@ Key points:
 - **No LLM lead**: orchestration = GHA workflow (matrix) + Node. Reviewers in the Review stage are fully independent (no inter-reviewer communication required); cross-domain synthesis is handled by the Synthesis reduce step.
 - Findings use a unified schema, enabling both Synthesis and Consolidate to process them mechanically.
 
+### Local Execution (skill / script)
+
+The same pipeline runs locally via `scripts/local-audit.sh <target>`: discovery → parallel `claude -p` reviewer subprocesses → synthesis → report. All intermediates (inventory, prompts, findings, synthesis) live in a `mktemp` work dir granted to Claude via `--add-dir` — nothing is written into the target repo. Local runs produce the same self-contained HTML report; instead of upserting a GitHub issue, the issue markdown is printed as the terminal summary. `skills/upkeep-audit/SKILL.md` is a thin Claude Code wrapper around the script: it maintains a clone in `~/.cache/upkeep`, runs the audit, and summarizes findings in chat.
+
 ---
 
 ## 2. Reviewer Team
@@ -222,6 +226,8 @@ repo-audit-action/                   # local directory (published name: Upkeep)
 │   ├── zh-TW/   README.md  overview.md  design.md  why-reusable-workflow.md  plans/
 │   ├── zh-CN/ … ja/ … ko/   (one set per language, same as above)
 │   └── (all multilingual user docs under docs/<locale>/; root README.md is the en base)
+├── skills/upkeep-audit/             # Claude Code skill: thin local-run wrapper (clones to ~/.cache/upkeep)
+├── scripts/local-audit.sh           # local pipeline orchestrator (same flow as CI; temp-dir intermediates)
 ├── reviewers/<locale>/              # 7 built-in rubrics + _reviewer-prompt + _synthesis-prompt, per locale (en, zh-TW); picked by rubric_lang
 ├── src/                             # deterministic TS: discovery/consolidate/report/matrix/prompt-bundle, etc.
 └── test/                            # unit + contract + e2e (samples in §10)
