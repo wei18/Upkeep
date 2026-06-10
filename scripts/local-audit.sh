@@ -66,13 +66,24 @@ Write your output to $WORK/findings/$r.json (absolute path) — do NOT create a 
 for r in $REVIEWERS; do run_reviewer "$r" & done
 wait || true
 
+# guarantee a findings file per reviewer even if a background job died early
+for r in $REVIEWERS; do
+  [ -f "$WORK/findings/$r.json" ] || "$TSX" "$ROOT/src/finalize.ts" reviewer "$r" "$WORK/findings/$r.json"
+done
+
 # --- synthesis ---
 "$TSX" "$ROOT/src/synthesis-prompt-cli.ts" "$WORK/prompts/synthesis.txt" "$RUBRIC_LANG"
+SYN_STRAY="$TARGET/synthesis.json"; SYN_PRE=0
+[ -e "$SYN_STRAY" ] && SYN_PRE=1
 (cd "$TARGET" && claude -p "Read the file $WORK/prompts/synthesis.txt and follow its instructions exactly.
 The inventory is at $WORK/inventory.json and the findings are under $WORK/findings/ (absolute paths).
 Write your output to $WORK/synthesis.json (absolute path) — do NOT write into the repository." \
   --allowedTools "Read,Write,Glob,Grep" --add-dir "$WORK" \
   --max-turns "$MAX_TURNS" --model "$MODEL") || true
+if [ "$SYN_PRE" -eq 0 ] && [ -e "$SYN_STRAY" ]; then
+  [ -e "$WORK/synthesis.json" ] || mv "$SYN_STRAY" "$WORK/synthesis.json"
+  rm -f "$SYN_STRAY"
+fi
 "$TSX" "$ROOT/src/finalize.ts" synthesis "$WORK/synthesis.json"
 
 # --- report ---
