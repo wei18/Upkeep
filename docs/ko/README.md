@@ -76,7 +76,7 @@ jobs:
 
 > upkeep으로 /path/to/repo를 감사해 줘
 
-첫 실행 시 skill이 Upkeep을 `~/.cache/upkeep`에 자동으로 clone 하고 의존성을 설치합니다.
+첫 실행 시 skill이 Upkeep을 `~/.cache/upkeep`에 자동으로 clone하고 의존성을 설치합니다.
 
 **스크립트 직접 실행** (Claude Code 세션 불필요):
 
@@ -93,7 +93,7 @@ cd ~/.cache/upkeep && npm ci
 | `--max-turns` | `30` | `max_turns` |
 | `--out` | `./upkeep-report.html` | report artifact |
 
-**요구 사항**: 로그인된 `claude` CLI (Pro/Max 구독; `setup-token` 도 GitHub 접근 권한도 필요 없음), Node 20+, git.
+**요구 사항**: 로그인된 `claude` CLI (Pro/Max 구독; `setup-token`도 GitHub 접근 권한도 필요 없음), Node 20+, git.
 
 **출력**: 동일한 독립 실행형 HTML 리포트(기본값 `upkeep-report.html`)와 터미널 요약. 로컬 실행은 GitHub issue를 만들지 않습니다.
 
