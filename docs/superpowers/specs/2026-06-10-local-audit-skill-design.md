@@ -1,7 +1,7 @@
 # Local Audit Skill — Design
 
 Date: 2026-06-10
-Status: Approved (pending spec review)
+Status: Implemented (2026-06-10)
 
 ## Goal
 
@@ -72,7 +72,7 @@ Flags (defaults match CI inputs): `--model claude-opus-4-8`, `--rubric-lang en`,
 ## Documentation updates (doc-lockstep)
 
 - `README.md` (en): new `## Run locally` section between `## Usage` and `## Reviewers`:
-  - Claude Code skill install (`npx skills add wei18/upkeep` or copy to `~/.claude/skills/`) and invocation ("audit /path/to/repo").
+  - Claude Code skill install (copy `skills/upkeep-audit/` to `~/.claude/skills/`) and invocation ("audit /path/to/repo").
   - Direct script usage without Claude Code.
   - Requirements: logged-in `claude` CLI (no `setup-token`, no GitHub permissions), Node 20+, git.
   - Output difference: `report.html` + terminal/chat summary; no GitHub issue.

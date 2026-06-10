@@ -15,6 +15,7 @@ npm run build  # tsc — run this too; vitest does not type-check
 - **The spec is the SSOT.** `docs/en/design.md` is authoritative; keep code and spec in sync — this tool exists to catch drift, so the spec must not drift.
 - **Docs are multilingual and stay in lockstep.** User docs live under `docs/<locale>/` (en, zh-TW, zh-CN, ja, ko). A change to one locale's README/overview/design/why-reusable-workflow must be propagated to all five.
 - **Reviewer rubrics** live under `reviewers/<locale>/`, selected by the `rubric_lang` input.
+- **Working specs/plans** live under `docs/superpowers/` (en-only design-process artifacts; intentionally outside the locale lockstep and unlinked from user-facing navigation).
 - **TDD** — write a failing test first, and cover known edge cases (especially for any heuristic).
 - **Conventional commits** (`feat:`, `fix:`, `docs:`, `chore:`, `test:`, `refactor:`).
 
