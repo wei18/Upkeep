@@ -33,7 +33,7 @@ There are two kinds of action, and neither can express that fan-out:
 - **JavaScript / Docker action** — a single entrypoint (e.g. `main: dist/index.js`). It cannot `uses:` another action, so it could not delegate the LLM work to [`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action); it would have to call Claude itself. And it still could not run jobs in parallel.
 - **Composite action** — runs as a sequence of *steps* inside **one** job. It *can* `uses:` other actions (so it could call `claude-code-action`), but with no matrix the reviewers would run **sequentially**, in a single job.
 
-So a composite action (`- uses: wei18/upkeep@v1`) *is* possible — at the cost of sequential reviewers. Upkeep deliberately chose the reusable-workflow form to keep reviewers parallel and independently isolated. For a scheduled audit, the slower sequential path would be acceptable; we preferred parallelism and clean failure isolation.
+So a composite action (`- uses: wei18/upkeep@v2`) *is* possible — at the cost of sequential reviewers. Upkeep deliberately chose the reusable-workflow form to keep reviewers parallel and independently isolated. For a scheduled audit, the slower sequential path would be acceptable; we preferred parallelism and clean failure isolation.
 
 ## What you actually give up
 

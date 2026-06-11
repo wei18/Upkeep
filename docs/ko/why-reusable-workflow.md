@@ -33,7 +33,7 @@ action에는 두 종류가 있는데, 둘 다 이 팬아웃을 표현할 수 없
 - **JavaScript / Docker action** — 단일 진입점(예: `main: dist/index.js`). 다른 action을 `uses:`할 수 없으므로 LLM 작업을 [`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action)에 위임하지 못하고 직접 Claude를 호출해야 하며, 게다가 job을 병렬로 실행할 수도 없습니다.
 - **Composite action** — **하나의** job 안에서 *step* 시퀀스로 실행됩니다. 다른 action을 `uses:`*할 수 있어*(그래서 `claude-code-action`을 호출 가능) matrix가 없으므로 reviewer가 단일 job 안에서 **순차적**으로 실행됩니다.
 
-따라서 composite action(`- uses: wei18/upkeep@v1`)도 *가능*합니다 — reviewer가 순차가 되는 대가로. Upkeep은 reviewer를 병렬·각자 격리로 유지하기 위해 의도적으로 재사용 가능한 workflow 형태를 선택했습니다. 예약 감사라면 느린 순차 경로도 허용 가능하지만, 우리는 병렬성과 깔끔한 장애 격리를 우선했습니다.
+따라서 composite action(`- uses: wei18/upkeep@v2`)도 *가능*합니다 — reviewer가 순차가 되는 대가로. Upkeep은 reviewer를 병렬·각자 격리로 유지하기 위해 의도적으로 재사용 가능한 workflow 형태를 선택했습니다. 예약 감사라면 느린 순차 경로도 허용 가능하지만, 우리는 병렬성과 깔끔한 장애 격리를 우선했습니다.
 
 ## 실제로 포기하는 것
 

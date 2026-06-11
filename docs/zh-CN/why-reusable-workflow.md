@@ -33,7 +33,7 @@ action 有两种，两种都无法表达这种扇出：
 - **JavaScript / Docker action**——单一入口（例如 `main: dist/index.js`）。它无法 `uses:` 另一个 action，因此无法把 LLM 工作委派给 [`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action)，得自己调用 Claude；而且它仍无法并行跑 job。
 - **Composite action**——以 **一个** job 内的一连串 *step* 执行。它*可以* `uses:` 其他 action（故能调用 `claude-code-action`），但没有 matrix，reviewer 会在单一 job 内**串行**执行。
 
-所以 composite action（`- uses: wei18/upkeep@v1`）*是*做得到的——代价是 reviewer 变串行。Upkeep 刻意选择 reusable workflow 形式，以保持 reviewer 并行且各自隔离。对排程审计而言，较慢的串行路径其实可接受；但我们偏好并行与干净的故障隔离。
+所以 composite action（`- uses: wei18/upkeep@v2`）*是*做得到的——代价是 reviewer 变串行。Upkeep 刻意选择 reusable workflow 形式，以保持 reviewer 并行且各自隔离。对排程审计而言，较慢的串行路径其实可接受；但我们偏好并行与干净的故障隔离。
 
 ## 你实际放弃的是什么
 
