@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { consolidate } from './consolidate.js';
-import { finalizeReviewerOutput } from './finalize.js';
+import { finalizeReviewerOutput, finalizeSynthesis } from './finalize.js';
 import { renderHtml } from './report-html.js';
 import { renderIssueMarkdown } from './report-issue.js';
 import type { ReviewerName, ReviewerOutput, SynthesisOutput, Severity } from './types.js';
@@ -21,7 +21,11 @@ export function loadReviewerOutputs(findingsDir: string): ReviewerOutput[] {
 }
 
 export function loadSynthesis(path: string): SynthesisOutput | null {
-  return existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as SynthesisOutput) : null;
+  if (!existsSync(path)) return null;
+  // a corrupt/invalid synthesis file degrades to a failed synthesis, never crashes the report
+  let raw: unknown = null;
+  try { raw = JSON.parse(readFileSync(path, 'utf8')); } catch { /* keep null */ }
+  return finalizeSynthesis(raw);
 }
 
 // CLI: report.ts <findingsDir> <synthesisJson|-> <outHtml> <outIssueMd> [inventoryJson]

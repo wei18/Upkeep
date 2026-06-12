@@ -100,4 +100,43 @@ describe('consolidate', () => {
     expect(r.synthesisStatus).toBe('failed');
     expect(r.themes).toEqual([]);
   });
+
+  it('merges findings grouped by synthesis semantic_duplicates beyond file+category', () => {
+    const outputs: ReviewerOutput[] = [
+      { reviewer: 'docs_staleness', status: 'ok', findings: [f({ file: 'a.md', category: 'staleness', severity: 'high' })] },
+      { reviewer: 'convention', status: 'ok', findings: [f({ file: 'b.md', category: 'inconsistency', reviewer: 'convention', severity: 'low' })] },
+    ];
+    const syn: SynthesisOutput = {
+      themes: [], executive_summary: '', status: 'ok',
+      semantic_duplicates: [['docs_staleness|a.md|staleness', 'convention|b.md|inconsistency']],
+    };
+    const r = consolidate(outputs, syn, OPTS);
+    expect(r.findings.length).toBe(1);
+    expect(r.findings[0].severity).toBe('high'); // representative is still the strongest finding
+    expect(r.findings[0].reviewers).toEqual(['convention', 'docs_staleness']);
+  });
+
+  it('ignores semantic_duplicates keys that match no finding', () => {
+    const outputs: ReviewerOutput[] = [
+      { reviewer: 'docs_staleness', status: 'ok', findings: [f({ file: 'a.md' })] },
+    ];
+    const syn: SynthesisOutput = {
+      themes: [], executive_summary: '', status: 'ok',
+      semantic_duplicates: [['docs_staleness|a.md|staleness', 'convention|no-such.md|inconsistency']],
+    };
+    const r = consolidate(outputs, syn, OPTS);
+    expect(r.findings.length).toBe(1);
+  });
+
+  it('does not apply semantic_duplicates from a failed synthesis', () => {
+    const outputs: ReviewerOutput[] = [
+      { reviewer: 'docs_staleness', status: 'ok', findings: [f({ file: 'a.md', category: 'staleness' })] },
+      { reviewer: 'convention', status: 'ok', findings: [f({ file: 'b.md', category: 'inconsistency', reviewer: 'convention' })] },
+    ];
+    const syn: SynthesisOutput = {
+      themes: [], executive_summary: '', status: 'failed',
+      semantic_duplicates: [['docs_staleness|a.md|staleness', 'convention|b.md|inconsistency']],
+    };
+    expect(consolidate(outputs, syn, OPTS).findings.length).toBe(2);
+  });
 });

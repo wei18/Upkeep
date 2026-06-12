@@ -1,7 +1,7 @@
 # Upkeep v2 — Skill 主角化與 Plugin 發行設計
 
 日期：2026-06-11
-狀態：USER_APPROVED 待確認（design 已口頭核准，spec 待審）
+狀態：Implemented（2026-06-12 已發版：v2 tag + plugin 上線，後續隨 skill 變更滾版）
 
 ## 目標
 
@@ -33,7 +33,7 @@ skills/upkeep-audit/.claude-plugin/plugin.json   # plugin 名稱：upkeep，含 
 ```
 
 - `marketplace.json`：`name: "upkeep"`，單一 plugin entry，`source: "./skills/upkeep-audit"`。
-- `plugin.json`：`name: "upkeep"`（skill 呼叫名為 `/upkeep:upkeep-audit`）、`description`、`version: "2.0.0"`、`author`、`repository`。
+- `plugin.json`：`name: "upkeep"`（skill 呼叫名為 `/upkeep:upkeep-audit`）、`description`、`version`（發佈起點 2.0.0，之後隨 skill 變更遞增，不回寫本 spec）、`author`、`repository`。
 - 既有 `skills/upkeep-audit/SKILL.md` 不搬移、行為不變（首次使用仍 clone 至 `~/.cache/upkeep` 並 `npm ci`）。
 - 發佈前以 `claude plugin validate` 與 `claude --plugin-dir` 本地驗證。
 
@@ -86,9 +86,9 @@ Banner（標語不變）
 
 ## 驗收標準
 
-- [ ] 乾淨環境執行兩行安裝指令後，`/upkeep:upkeep-audit` 可被呼叫並完成一次本地 audit。
-- [ ] `npx skills add wei18/upkeep --skill upkeep-audit` 可發現並安裝該 skill。
-- [ ] `claude plugin validate` 通過。
-- [ ] 5 個 locale README 結構一致，皆以 plugin 安裝開場。
-- [ ] `gh workflow` 視角：既有 `@v1` 呼叫者行為不變；`@v2` 可用且內容相同。
-- [ ] design docs（5 locale）反映 plugin 發行架構。
+- [x] 乾淨環境執行兩行安裝指令後，`/upkeep:upkeep-audit` 可被呼叫並完成一次本地 audit。
+- [x] `npx skills add wei18/upkeep --skill upkeep-audit` 可發現並安裝該 skill。
+- [x] `claude plugin validate` 通過。
+- [x] 5 個 locale README 結構一致，皆以 plugin 安裝開場。
+- [x] `gh workflow` 視角：既有 `@v1` 呼叫者行為不變；`@v2` 可用且內容相同。
+- [x] design docs（5 locale）反映 plugin 發行架構。

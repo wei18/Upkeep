@@ -44,6 +44,20 @@ describe('report pipeline', () => {
     expect(loadSynthesis(join(tmpdir(), 'no-such-synthesis.json'))).toBeNull();
   });
 
+  it('a corrupt synthesis file degrades to a failed synthesis instead of crashing', () => {
+    const { dir } = fixture();
+    writeFileSync(join(dir, 'synthesis.json'), '{ this is not json');
+    expect(loadSynthesis(join(dir, 'synthesis.json')))
+      .toEqual({ themes: [], semantic_duplicates: [], executive_summary: '', status: 'failed' });
+  });
+
+  it('a synthesis file with an invalid shape degrades to a failed synthesis', () => {
+    const { dir } = fixture();
+    writeFileSync(join(dir, 'synthesis.json'), JSON.stringify({ themes: 'nope' }));
+    expect(loadSynthesis(join(dir, 'synthesis.json')))
+      .toEqual({ themes: [], semantic_duplicates: [], executive_summary: '', status: 'failed' });
+  });
+
   it('end-to-end: load → consolidate → render produces report with theme and finding', () => {
     const { dir, fdir } = fixture();
     const outs = loadReviewerOutputs(fdir);

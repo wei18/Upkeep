@@ -2,11 +2,12 @@
 
 ## Supported versions
 
-Upkeep ships as a single moving major tag. Fixes land on the latest `v1`.
+Upkeep ships as a single moving major tag. Fixes land on the latest `v2`.
 
 | Version | Supported |
 |---|---|
-| `v1` (latest) | ✅ |
+| `v2` (latest) | ✅ |
+| `v1` (frozen) | ❌ |
 | older commits / tags | ❌ |
 
 ## Reporting a vulnerability

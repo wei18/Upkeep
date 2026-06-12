@@ -38,6 +38,17 @@ export function consolidate(
     if (arr) arr.push(fnd); else groups.set(key, [fnd]);
   }
 
+  // synthesis 判定的語意重複（鍵格式 "reviewer|file|category"）再合併一輪；
+  // 去掉 reviewer 前綴即得本層的 file|category 群組鍵，查無對應群組的鍵忽略
+  if (synthesis !== null && synthesis.status === 'ok') {
+    for (const dup of synthesis.semantic_duplicates) {
+      const keys = uniq(dup.map((k) => k.slice(k.indexOf('|') + 1))).filter((k) => groups.has(k));
+      if (keys.length < 2) continue;
+      const target = groups.get(keys[0])!;
+      for (const k of keys.slice(1)) { target.push(...groups.get(k)!); groups.delete(k); }
+    }
+  }
+
   const merged: ConsolidatedFinding[] = [];
   for (const group of groups.values()) {
     // 代表：severity×confidence 最高；同分時依 reviewer 列舉序（design §4），不靠載入順序
