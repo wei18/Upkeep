@@ -1,7 +1,7 @@
 # Upkeep — Design Document
 
-- Status: Implemented and shipped as v1 — this spec tracks the shipped behavior
-- Date: 2026-06-04 (design); shipped 2026-06-05
+- Status: Implemented and shipped; repositioned as v2 (Claude Code plugin + skill distribution) — this spec tracks the shipped behavior
+- Date: 2026-06-04 (design); shipped 2026-06-05; v2 repositioning 2026-06-12
 - Location: Standalone repo `upkeep/`, spec at `docs/design.md` (see §6)
 - Self-constraint: **This spec is the SSOT and must stay up-to-date as implementation evolves** (this tool exists to catch drift — the spec itself must not drift)
 

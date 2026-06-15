@@ -19,7 +19,7 @@ An AI repo auditor that catches drift (stale docs, spec/code mismatch, orphaned 
 
 Three install paths, all pointing at `skills/upkeep-audit/` (do not move it):
 
-1. Claude Code plugin: `.claude-plugin/marketplace.json` (marketplace `upkeep`) → plugin `upkeep`, single-skill layout (SKILL.md at plugin root) → invocation `/upkeep:upkeep-audit`. Keep plugin version in `skills/upkeep-audit/.claude-plugin/plugin.json` bumped on skill changes.
+1. Claude Code plugin: `.claude-plugin/marketplace.json` (marketplace `upkeep`) → plugin `upkeep`, single-skill layout (SKILL.md at plugin root) → invocation `/upkeep:upkeep-audit`. The plugin version is pinned in **two** files that must stay in lockstep — bump both on skill changes: `skills/upkeep-audit/.claude-plugin/plugin.json` and the `plugins[].version` field in `.claude-plugin/marketplace.json`.
 2. `npx skills add wei18/upkeep --skill upkeep-audit` — relies on the flat `skills/<name>/SKILL.md` layout and `name`+`description` frontmatter. Don't break either.
 3. Manual copy into `~/.claude/skills/`.
 

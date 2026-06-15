@@ -8,7 +8,7 @@ Periodic human review catches some of it, but it requires keeping the full conte
 
 ## The pipeline: fan-out → synthesis → report
 
-Upkeep runs as a reusable `workflow_call` workflow composed of five stages: Discovery, Consolidate, and Report are deterministic (no LLM); the parallel reviewers and Synthesis are the LLM-driven stages.
+Upkeep has two entry points that share one engine: a reusable `workflow_call` workflow for CI, and a local Claude Code skill / plugin (or plain script) for running on your machine. Either way the pipeline is the same five stages: Discovery, Consolidate, and Report are deterministic (no LLM); the parallel reviewers and Synthesis are the LLM-driven stages.
 
 **1. Discovery**
 
@@ -16,7 +16,7 @@ A discovery step walks the repository and produces a structured file inventory: 
 
 **2. Parallel reviewers (fan-out)**
 
-Each enabled reviewer runs as its own isolated matrix job. Jobs run in parallel and are fault-tolerant — a failure in one reviewer does not block the others. Each reviewer receives the file inventory and its focused mandate, and writes its findings to a structured output.
+Each enabled reviewer runs in isolation — an independent matrix job in CI, or a parallel `claude -p` subprocess locally. They run in parallel and are fault-tolerant — a failure in one reviewer does not block the others. Each reviewer receives the file inventory and its focused mandate, and writes its findings to a structured output.
 
 **3. Synthesis**
 
@@ -28,7 +28,7 @@ A deterministic step merges duplicate findings that multiple reviewers raised fo
 
 **5. Report**
 
-A deterministic report step renders everything into a self-contained HTML file (no external dependencies) and upserts a GitHub tracking issue. The same issue is reused across runs so your issue tracker stays clean.
+A deterministic report step renders everything into a self-contained HTML file (no external dependencies). In CI it also upserts a single GitHub tracking issue, reused across runs so your issue tracker stays clean; run locally, it prints the summary to your terminal/chat instead and never touches GitHub.
 
 ## Reviewers
 
@@ -52,6 +52,6 @@ Upkeep has no write access to your repository content. It reads files and opens/
 
 ## Outputs
 
-**HTML report** — Uploaded as the `report-html` workflow artifact on every run. Self-contained; open it locally without a server. Contains the executive summary, per-reviewer findings, and the evidence cited for each finding.
+**HTML report** — In CI, uploaded as the `report-html` workflow artifact on every run; locally, written to a path you choose (default `./upkeep-report.html`). Self-contained; open it locally without a server. Contains the executive summary, per-reviewer findings, and the evidence cited for each finding.
 
-**GitHub tracking issue** — Created on first run, then updated (upserted) on every subsequent run. Labeled `audit` by default. Provides a persistent, linkable record of the current repo health without polluting your issue tracker with duplicate entries.
+**GitHub tracking issue** (CI only) — Created on first run, then updated (upserted) on every subsequent run. Labeled `audit` by default. Provides a persistent, linkable record of the current repo health without polluting your issue tracker with duplicate entries. Run locally, this step is skipped and the summary is printed instead.

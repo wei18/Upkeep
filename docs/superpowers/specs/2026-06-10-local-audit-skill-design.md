@@ -71,6 +71,8 @@ Flags (defaults match CI inputs): `--model claude-opus-4-8`, `--rubric-lang en`,
 
 ## Documentation updates (doc-lockstep)
 
+> **Superseded (2026-06-12):** the README layout below (`## Usage`, `## Run locally`) was reorganized by the v2 plugin-repositioning (see `2026-06-11-v2-plugin-repositioning-design.md`). The local-execution docs now live under `## Run as a plain script`, and the skill/plugin install paths under `## Install`. The intent — local execution must be documented and propagated across all five locales — still holds; only the section names changed.
+
 - `README.md` (en): new `## Run locally` section between `## Usage` and `## Reviewers`:
   - Claude Code skill install (copy `skills/upkeep-audit/` to `~/.claude/skills/`) and invocation ("audit /path/to/repo").
   - Direct script usage without Claude Code.
