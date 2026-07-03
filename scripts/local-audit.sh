@@ -5,7 +5,7 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 <target-repo> [--model M] [--rubric-lang L] [--max-turns N] [--out FILE]" >&2
+  echo "usage: $0 <target-repo> [--model M] [--rubric-lang L] [--max-turns N] [--out FILE] [--keep-work]" >&2
   exit 2
 }
 
@@ -17,12 +17,14 @@ MODEL="claude-opus-4-8"
 RUBRIC_LANG="en"
 MAX_TURNS="30"
 OUT="$PWD/upkeep-report.html"
+KEEP_WORK=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --model)       MODEL="$2"; shift 2 ;;
     --rubric-lang) RUBRIC_LANG="$2"; shift 2 ;;
     --max-turns)   MAX_TURNS="$2"; shift 2 ;;
     --out)         OUT="$2"; shift 2 ;;
+    --keep-work)   KEEP_WORK=1; shift ;;
     *) usage ;;
   esac
 done
@@ -35,8 +37,18 @@ command -v claude >/dev/null 2>&1 || { echo "error: claude CLI not found — ins
 [ -x "$TSX" ] || { echo "error: missing dependencies — run 'npm ci' in $ROOT first" >&2; exit 1; }
 
 WORK="$(mktemp -d)"
+[ "$KEEP_WORK" -eq 1 ] || trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/prompts" "$WORK/findings"
 echo "upkeep: target=$TARGET work=$WORK model=$MODEL rubric_lang=$RUBRIC_LANG max_turns=$MAX_TURNS"
+
+# --- output-only guard: snapshot the target before reviewers touch it ---
+TARGET_IS_GIT=0
+if git -C "$TARGET" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  TARGET_IS_GIT=1
+  PRE_STATUS="$(git -C "$TARGET" status --porcelain)"
+else
+  echo "upkeep: warning: output-only guarantee cannot be verified (target is not a git repository)"
+fi
 
 # --- discovery ---
 "$TSX" "$ROOT/src/discovery.ts" "$TARGET" "$WORK/inventory.json"
@@ -86,9 +98,23 @@ if [ "$SYN_PRE" -eq 0 ] && [ -e "$SYN_STRAY" ]; then
 fi
 "$TSX" "$ROOT/src/finalize.ts" synthesis "$WORK/synthesis.json"
 
+# --- output-only guard: verify the target is unchanged ---
+if [ "$TARGET_IS_GIT" -eq 1 ]; then
+  POST_STATUS="$(git -C "$TARGET" status --porcelain)"
+  if [ "$PRE_STATUS" != "$POST_STATUS" ]; then
+    echo "error: output-only guarantee violated — the target repo was modified during the audit:" >&2
+    diff <(printf '%s\n' "$PRE_STATUS") <(printf '%s\n' "$POST_STATUS") >&2 || true
+    echo "error: inspect and restore the target repo with git (e.g. 'git -C $TARGET status', 'git -C $TARGET checkout -- .')" >&2
+    exit 1
+  fi
+fi
+
 # --- report ---
 "$TSX" "$ROOT/src/report.ts" "$WORK/findings" "$WORK/synthesis.json" "$OUT" "$WORK/issue.md" "$WORK/inventory.json"
 echo
 echo "upkeep: report written to $OUT"
 echo
 cat "$WORK/issue.md"
+if [ "$KEEP_WORK" -eq 1 ]; then
+  echo "upkeep: work dir kept at $WORK"
+fi
