@@ -1,7 +1,7 @@
 # Local Audit Skill — Design
 
 Date: 2026-06-10
-Status: Implemented (2026-06-10)
+Status: Implemented (2026-06-10); updated 2026-07-04 (documented `--keep-work` and the output-only safety mechanisms added since first implementation)
 
 ## Goal
 
@@ -28,6 +28,9 @@ Rationale: pipeline logic lives in a testable bash script consistent with the pr
 
 ```
 WORK=$(mktemp -d)                                  # never write into the target repo
+trap 'rm -rf "$WORK"' EXIT                         # skipped when --keep-work is passed
+if target is a git repo: PRE_STATUS=$(git status --porcelain)   # output-only guard, snapshot before
+else: print warning (output-only guarantee cannot be verified)
 tsx src/discovery.ts <target> $WORK/inventory.json
 tsx src/matrix.ts <target>                         # → enabled reviewer list
 for each reviewer (parallel, mirrors CI matrix):
@@ -35,10 +38,13 @@ for each reviewer (parallel, mirrors CI matrix):
   (cd <target> && claude -p "Read $WORK/prompts/<r>.txt …; write $WORK/findings/<r>.json" \
      --allowedTools Read,Glob,Grep,Write --add-dir $WORK \
      --max-turns <n> --model <m>) || true          # continue-on-error, same as CI
+  pollution guard: if the model wrote findings/<r>.json into <target> anyway, move it into $WORK and delete it from <target>
   tsx src/finalize.ts reviewer <r> $WORK/findings/<r>.json   # failed-fallback, same as CI
-synthesis: tsx src/synthesis-prompt-cli.ts → claude -p (same pattern) → tsx src/finalize.ts synthesis
+fallback loop: for each reviewer still missing $WORK/findings/<r>.json (e.g. a background job died early), run the finalize failed-fallback for it
+synthesis: tsx src/synthesis-prompt-cli.ts → claude -p (same pattern, same pollution guard for synthesis.json) → tsx src/finalize.ts synthesis
+if target is a git repo: POST_STATUS=$(git status --porcelain); diff vs PRE_STATUS; on mismatch print the diff and exit 1
 tsx src/report.ts $WORK/findings $WORK/synthesis.json <out.html> $WORK/issue.md $WORK/inventory.json
-print: report path + issue.md content (the chat-summary source)
+print: report path + issue.md content (the chat-summary source); if --keep-work, also print the $WORK path
 ```
 
 Key differences vs CI:
@@ -47,7 +53,7 @@ Key differences vs CI:
 - The reviewer/synthesis wrapper prompts point Claude at absolute temp paths instead of "repository root".
 - `issue.md` is printed instead of upserted to GitHub.
 
-Flags (defaults match CI inputs): `--model claude-opus-4-8`, `--rubric-lang en`, `--max-turns 30`, `--out <path>` (default `./upkeep-report.html` in cwd).
+Flags (defaults match CI inputs): `--model claude-opus-4-8`, `--rubric-lang en`, `--max-turns 30`, `--out <path>` (default `./upkeep-report.html` in cwd), `--keep-work` (skip the `$WORK` cleanup trap and print its path at the end, for debugging).
 
 ## SKILL.md behavior
 
@@ -58,8 +64,11 @@ Flags (defaults match CI inputs): `--model claude-opus-4-8`, `--rubric-lang en`,
 ## Error handling
 
 - `set -euo pipefail` in the script; each `claude -p` call wrapped with `|| true` (CI's `continue-on-error` analog).
-- `finalize.ts` already writes a `failed` fallback findings file when output is missing/invalid — reused as-is.
+- `finalize.ts` already writes a `failed` fallback findings file when output is missing/invalid — reused as-is; a second fallback loop after the parallel reviewer run guarantees every enabled reviewer has a findings file even if its background job died before writing one.
 - Missing `claude` CLI / not logged in: script checks `command -v claude` upfront and exits with a clear message.
+- Output-only guard, technically enforced (not just prompted): when the target is a git repo, the script snapshots `git status --porcelain` before the reviewers/synthesis run and again after; a mismatch prints the diff and exits 1 so the operator knows the audited repo was touched. Against a non-git target the guarantee can't be verified this way, so the script prints a warning instead of silently assuming safety.
+- Stray-file pollution guard: reviewer/synthesis prompts instruct Claude to write into `$WORK`, but if a model writes `findings/<r>.json` or `synthesis.json` into the target repo anyway, the script moves the file into `$WORK` and removes it (and any now-empty `findings/` dir) from the target before the output-only diff runs.
+- `$WORK` cleanup: `trap 'rm -rf "$WORK"' EXIT` removes the temp work dir on exit; `--keep-work` skips the trap and prints the `$WORK` path at the end so intermediates can be inspected.
 
 ## Prerequisites checklist
 

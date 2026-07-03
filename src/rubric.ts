@@ -21,7 +21,6 @@ const DEFAULT_PATHS: Partial<Record<ReviewerName, string[]>> = {
 };
 
 export interface RubricBundle {
-  reviewer: ReviewerName;
   builtinRubric: string;         // action 內建 rubric 檔絕對路徑
   conventionSources: string[];   // repo 規範來源（相對路徑）
   explicitRubric: string | null; // audit.yml reviewers.<name>.rubric 或 null
@@ -64,7 +63,6 @@ export function composeRubric(
   const cfg = inventory.config.reviewers[reviewer];
   const fallbackGlobs = DEFAULT_PATHS[reviewer];
   return {
-    reviewer,
     builtinRubric: join(actionRoot, 'reviewers', rubricLang, `${reviewer}.md`),
     conventionSources: inventory.conventions.map((c) => c.path),
     explicitRubric: cfg?.rubric ?? null,

@@ -16,7 +16,7 @@ export function finalizeSynthesis(raw: unknown): SynthesisOutput {
   return { themes: [], semantic_duplicates: [], executive_summary: '', status: 'failed' };
 }
 
-function readJsonOrNull(path: string): unknown {
+export function readJsonOrNull(path: string): unknown {
   if (!existsSync(path)) return null;
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
 }
