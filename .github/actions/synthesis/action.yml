@@ -15,6 +15,14 @@ inputs:
   rubric_lang:
     description: synthesis prompt language (en | zh-TW | ...)
     default: en
+  agent_type:
+    description: Built-in adapter id (claude | command). Unset/default runs today's claude-code-action path.
+    default: claude
+  agent_command:
+    description: >-
+      Required when agent_type is "command". A shell command template with {prompt}/{output}/{target}
+      placeholder tokens, substituted before execution.
+    default: ''
 runs:
   using: composite
   steps:
@@ -41,6 +49,7 @@ runs:
         ROOT="${{ github.action_path }}/../../.."
         "$ROOT/node_modules/.bin/tsx" "$ROOT/src/synthesis-prompt-cli.ts" "${{ runner.temp }}/synthesis-prompt.txt" "${{ inputs.rubric_lang }}"
     - uses: anthropics/claude-code-action@v1
+      if: inputs.agent_type == 'claude'
       continue-on-error: true
       with:
         prompt: |
@@ -49,6 +58,22 @@ runs:
         claude_args: --allowedTools Read,Write,Glob,Grep --max-turns ${{ inputs.max_turns }} --model ${{ inputs.model }}
         claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
         github_token: ${{ inputs.github_token }}
+    - name: generic command agent
+      if: inputs.agent_type == 'command'
+      continue-on-error: true
+      shell: bash
+      env:
+        AGENT_COMMAND: ${{ inputs.agent_command }}
+        PROMPT_FILE: ${{ runner.temp }}/synthesis-prompt.txt
+        OUTPUT_FILE: ${{ inputs.target }}/synthesis.json
+        TARGET_DIR: ${{ inputs.target }}
+      run: |
+        set -euo pipefail
+        CMD="$AGENT_COMMAND"
+        CMD="${CMD//\{prompt\}/$PROMPT_FILE}"
+        CMD="${CMD//\{output\}/$OUTPUT_FILE}"
+        CMD="${CMD//\{target\}/$TARGET_DIR}"
+        eval "$CMD"
     - name: finalize synthesis
       if: always()
       shell: bash

@@ -53,12 +53,13 @@ Each external dependency is flagged `Verified ✓` (with source) or `Unconfirmed
   claude-code-action's own v0→v1 collapse into `claude_args`.
 - **GitHub Actions `uses:` cannot be expression-interpolated** — a composite action cannot select its
   sub-action via `${{ }}`; adapter branching in CI must therefore be **multiple `if:`-gated steps**,
-  one literal `uses:` per built-in adapter, plus one `run:` step for the generic command. **Unconfirmed ?**
-  — strong prior (this is my understanding of documented GHA behavior) but I did not fetch the official
-  page this session. **Blocks Phase 1 start until confirmed** (it decides the composite-action shape).
+  one literal `uses:` per built-in adapter, plus one `run:` step for the generic command. **Verified ✓**
+  (2026-07-04: GitHub staff in actions/runner#895 — "We don't support expression in those place";
+  see "What I did not verify" for detail).
 - **Reusable-workflow additive secrets** — adding new `required: false` secrets and optional inputs to
-  `workflow_call` is backward compatible for existing callers. **Unconfirmed ?** — widely true in
-  practice; verify against GitHub reusable-workflow docs before relying on it for the v2-additive claim.
+  `workflow_call` is backward compatible for existing callers. **Verified ✓** (2026-07-04:
+  workflow-syntax.md — the only documented error case is a caller passing something the callee does
+  not declare; extra optional declarations cannot break existing callers).
 
 ## §How
 
@@ -168,6 +169,35 @@ substitution. The output-only guard (local-audit.sh:44-51, 101-110) and finalize
 adapter-independent and stay. Agent resolution reuses the same `src/` logic the CI path uses (parse
 `.claude/audit.yml`), so local and CI cannot drift.
 
+**Phase 1 status of this wiring:** `.claude/audit.yml` `agents`/`reviewers.<n>.agent`/`synthesis.agent`
+are parsed and resolved by `src/agent-resolver.ts` and *actually applied* by `scripts/local-audit.sh`
+today. The CI composite actions (`.github/actions/{reviewer,synthesis}/action.yml`) gained the
+`if:`-gated `agent_type`/`agent_command` branching capability in Phase 1, but `audit.yml` (the reusable
+workflow) does not yet resolve each matrix reviewer's agent from config and forward it — that wiring
+(`reviewers.<n>.agent`/`synthesis.agent` → CI) is explicitly Phase 2 scope (see the phase split below).
+So today, `agents:` config only changes local-audit.sh behavior; the CI path stays 100% Claude
+regardless of `.claude/audit.yml` until Phase 2 lands.
+
+**Trust boundary — `type: command` is not safe to auto-execute against an untrusted target.**
+`.claude/audit.yml` is read from the *repo being audited*, not from the auditor's own configuration.
+A `command`-type agent entry is an arbitrary shell command template that gets `eval`'d — so a hostile
+target repo could use it to run arbitrary code on whoever runs the audit.
+
+- **Local mode**: this is a real local code-execution risk, since `local-audit.sh` runs directly on the
+  auditor's machine with the auditor's privileges. `run_agent` therefore refuses `command`-type agents
+  by default: it prints an explicit warning to stderr and falls back to the `claude` default unless the
+  operator passes `--allow-command-agents` (an explicit, per-invocation opt-in — never implied by the
+  target's own config).
+- **CI mode**: the composite actions do **not** carry this gate. The workflow caller (whoever wires
+  `.github/workflows/audit.yml` into their own repo) already controls which `.claude/audit.yml` is in
+  play — it's their own trust domain, not an untrusted third party's, so no extra confirmation is
+  needed there today.
+- **Phase 2 caveat**: once `reviewers.<n>.agent`/`synthesis.agent` are actually wired from config into
+  the CI matrix (see above), re-evaluate this for the fork-PR case — a workflow that runs on
+  `pull_request` from a fork could let the *fork's* `.claude/audit.yml` drive a `command` agent inside
+  the base repo's CI context. Track this as a Phase 2 checklist item; it is out of scope for Phase 1
+  because Phase 1 never lets config select `command` in CI in the first place.
+
 ### 7. Testing strategy
 
 - **Contract lock** — extend `test/workflow-structure.test.ts`: assert new secrets/inputs are
@@ -209,7 +239,10 @@ later just drops the deprecated alias.
   *Gated on confirming the `uses:`-branching Prerequisite.*
 - **Phase 2 — Gemini adapter + per-reviewer selection.** Add the `gemini` built-in (clean allowlist +
   turn-cap fit), per-agent secrets plumbing, `reviewers.<n>.agent`/`synthesis.agent` wiring, 5-locale
-  `{{TOOLS}}` template edit.
+  `{{TOOLS}}` template edit. **Checklist addition:** when this wiring lands, re-evaluate the fork-PR
+  trust boundary for `type: command` in CI (see §How.6 "Trust boundary") — a workflow triggered on a
+  fork's `pull_request` could otherwise let the fork's own `.claude/audit.yml` select a `command` agent
+  that executes inside the base repo's CI context.
 - **Phase 3 — Codex + naming (deferred / separate decision).** Codex needs a distinct sandbox-mode
   capability profile (no turn cap); naming neutralization as alias. Out of the first cut unless the user
   prioritizes it.
@@ -272,10 +305,14 @@ The original options are retained for the record.
 
 ## What I did not verify (+ confidence)
 
-- **`uses:` cannot be expression-interpolated in composite actions** — strong prior but not re-fetched
-  from GHA docs this session. 信心：中高. This gates the Phase 1 composite shape — confirm first.
-- **Adding `required: false` secrets/inputs to `workflow_call` is fully back-compat** — practice says
-  yes, not doc-verified this session. 信心：中高.
+- **`uses:` cannot be expression-interpolated in composite actions** — Verified ✓ (2026-07-04):
+  confirmed by GitHub staff in actions/runner#895 ("We don't support expression in those place");
+  the if:-gated literal-`uses:` step shape in §How.3 is therefore the correct Phase 1 form.
+- **Adding `required: false` secrets/inputs to `workflow_call` is fully back-compat** — Verified ✓
+  (2026-07-04): workflow-syntax.md documents the only error case as "caller passes something the
+  callee does not declare"; declaring extra optional fields cannot break existing callers.
+  Relaxing an existing secret from `required: true` to `false` is compatible by the same rules
+  (derived, not verbatim-documented — 信心：中).
 - **Gemini `run-gemini-cli` exact input names / how `coreTools`+`maxSessionTurns` are passed from the
   action** (vs. a settings.json file) — not fetched; the *capability existence* is verified, the exact
   wiring is not. 信心：中. Affects Phase 2 step authoring only.
