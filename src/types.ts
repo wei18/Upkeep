@@ -24,17 +24,6 @@ export interface ReviewerConfig {
   enabled: boolean;
   paths?: string[];
   rubric?: string; // repo 內相對路徑
-  agent?: string; // agents registry 中的 id；未設定 → "default"
-}
-
-/** built-in adapter id. Phase 1 只出 claude（既有路徑）與 command（generic escape hatch）。 */
-export type AgentType = 'claude' | 'command';
-
-export interface AgentConfig {
-  type: AgentType;
-  model?: string;     // 未設定 → 落回 workflow 的 `model` input
-  max_turns?: number; // 未設定 → 落回 workflow 的 `max_turns` input
-  command?: string;   // type: command 專用；{prompt}/{output}/{target} 為唯一 placeholder token
 }
 
 export interface AuditConfig {
@@ -42,8 +31,6 @@ export interface AuditConfig {
   reviewers: Record<ReviewerName, ReviewerConfig>;
   report: { issueLabel: string; minSeverity: Severity };
   ignore: string[]; // glob paths dropped from the inventory entirely (all reviewers)
-  agents: Record<string, AgentConfig>; // 至少含 "default"；無 `agents:` 區塊 → 隱含 { default: { type: 'claude' } }
-  synthesis: { agent: string };        // synthesis 使用的 agent id；預設 "default"
 }
 
 export interface FileEntry {

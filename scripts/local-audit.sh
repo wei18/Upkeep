@@ -5,7 +5,7 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 <target-repo> [--model M] [--rubric-lang L] [--max-turns N] [--out FILE] [--keep-work] [--allow-command-agents]" >&2
+  echo "usage: $0 <target-repo> [--model M] [--rubric-lang L] [--max-turns N] [--out FILE] [--keep-work]" >&2
   exit 2
 }
 
@@ -18,7 +18,6 @@ RUBRIC_LANG="en"
 MAX_TURNS="30"
 OUT="$PWD/upkeep-report.html"
 KEEP_WORK=0
-ALLOW_COMMAND_AGENTS=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --model)       MODEL="$2"; shift 2 ;;
@@ -26,7 +25,6 @@ while [ $# -gt 0 ]; do
     --max-turns)   MAX_TURNS="$2"; shift 2 ;;
     --out)         OUT="$2"; shift 2 ;;
     --keep-work)   KEEP_WORK=1; shift ;;
-    --allow-command-agents) ALLOW_COMMAND_AGENTS=1; shift ;;
     *) usage ;;
   esac
 done
@@ -58,72 +56,17 @@ RAW="$("$TSX" "$ROOT/src/matrix.ts" "$TARGET")"
 REVIEWERS="$(node -e 'console.log(JSON.parse(process.argv[1]).join(" "))' "${RAW#reviewers=}")"
 echo "upkeep: reviewers: $REVIEWERS"
 
-# --- agent dispatch: resolve each reviewer/synthesis to an agent via src/agent-resolver.ts
-# (same config resolution the CI composite actions use, so local and CI cannot drift), then
-# run it. `claude` reproduces today's invocation byte-for-byte when no `agents:` block is
-# configured (model/max_turns fall back to $MODEL/$MAX_TURNS); `command` is the generic
-# escape hatch with {prompt}/{output}/{target} token substitution.
-resolve_agent() {
-  "$TSX" "$ROOT/src/agent-resolver.ts" "$TARGET" "$1"
-}
-
-run_claude_agent() {
-  local instruction="$1" model="$2" max_turns="$3"
-  (cd "$TARGET" && claude -p "$instruction" \
-    --allowedTools "Read,Write,Glob,Grep" --add-dir "$WORK" \
-    --max-turns "$max_turns" --model "$model") || true
-}
-
-# run_agent <resolved-json> <instruction> <prompt_file> <output_file>
-run_agent() {
-  local resolved="$1" instruction="$2" prompt_file="$3" output_file="$4"
-  local type model max_turns cmd warning agent_id
-  type="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).type)' "$resolved")"
-  model="$(node -e 'const a=JSON.parse(process.argv[1]); process.stdout.write(a.model ?? process.argv[2])' "$resolved" "$MODEL")"
-  max_turns="$(node -e 'const a=JSON.parse(process.argv[1]); process.stdout.write(String(a.max_turns ?? process.argv[2]))' "$resolved" "$MAX_TURNS")"
-  warning="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).warning || "")' "$resolved")"
-  [ -n "$warning" ] && echo "upkeep: warning: $warning" >&2
-  case "$type" in
-    claude)
-      run_claude_agent "$instruction" "$model" "$max_turns"
-      ;;
-    command)
-      # security: `.claude/audit.yml` is read from the *target* repo being audited — a hostile
-      # target could declare a `command` agent to run arbitrary code on the auditor's machine.
-      # Require an explicit opt-in flag before eval'ing anything the target repo configured.
-      if [ "$ALLOW_COMMAND_AGENTS" -ne 1 ]; then
-        agent_id="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).id)' "$resolved")"
-        echo "upkeep: warning: target config requests a command agent (id=\"$agent_id\") but --allow-command-agents was not passed; refusing to eval untrusted commands from the target repo and falling back to claude default. Pass --allow-command-agents to explicitly allow this." >&2
-        run_claude_agent "$instruction" "$model" "$max_turns"
-        return 0
-      fi
-      cmd="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).command || "")' "$resolved")"
-      if [ -z "$cmd" ]; then
-        echo "upkeep: warning: agent type 'command' has no command template, skipping" >&2
-        return 0
-      fi
-      cmd="${cmd//\{prompt\}/$prompt_file}"
-      cmd="${cmd//\{output\}/$output_file}"
-      cmd="${cmd//\{target\}/$TARGET}"
-      (cd "$TARGET" && eval "$cmd") || true
-      ;;
-    *)
-      echo "upkeep: warning: unknown agent type '$type', skipping" >&2
-      ;;
-  esac
-}
-
 # --- reviewers (parallel, mirrors the CI matrix) ---
 run_reviewer() {
   local r="$1"
   local stray="$TARGET/findings/$r.json" pre=0
   [ -e "$stray" ] && pre=1
   "$TSX" "$ROOT/src/prompt-bundle.ts" "$r" "$WORK/inventory.json" "$WORK/prompts/$r.txt" "$RUBRIC_LANG"
-  local resolved; resolved="$(resolve_agent "$r")"
-  run_agent "$resolved" "Read the file $WORK/prompts/$r.txt and follow its instructions exactly.
+  (cd "$TARGET" && claude -p "Read the file $WORK/prompts/$r.txt and follow its instructions exactly.
 The inventory is at $WORK/inventory.json (absolute path).
 Write your output to $WORK/findings/$r.json (absolute path) — do NOT create a findings/ directory inside the repository." \
-    "$WORK/prompts/$r.txt" "$WORK/findings/$r.json"
+    --allowedTools "Read,Write,Glob,Grep" --add-dir "$WORK" \
+    --max-turns "$MAX_TURNS" --model "$MODEL") || true
   # pollution guard: if the model wrote into the target repo anyway, move it out
   if [ "$pre" -eq 0 ] && [ -e "$stray" ]; then
     [ -e "$WORK/findings/$r.json" ] || mv "$stray" "$WORK/findings/$r.json"
@@ -144,11 +87,11 @@ done
 "$TSX" "$ROOT/src/synthesis-prompt-cli.ts" "$WORK/prompts/synthesis.txt" "$RUBRIC_LANG"
 SYN_STRAY="$TARGET/synthesis.json"; SYN_PRE=0
 [ -e "$SYN_STRAY" ] && SYN_PRE=1
-SYN_RESOLVED="$(resolve_agent --synthesis)"
-run_agent "$SYN_RESOLVED" "Read the file $WORK/prompts/synthesis.txt and follow its instructions exactly.
+(cd "$TARGET" && claude -p "Read the file $WORK/prompts/synthesis.txt and follow its instructions exactly.
 The inventory is at $WORK/inventory.json and the findings are under $WORK/findings/ (absolute paths).
 Write your output to $WORK/synthesis.json (absolute path) — do NOT write into the repository." \
-  "$WORK/prompts/synthesis.txt" "$WORK/synthesis.json"
+  --allowedTools "Read,Write,Glob,Grep" --add-dir "$WORK" \
+  --max-turns "$MAX_TURNS" --model "$MODEL") || true
 if [ "$SYN_PRE" -eq 0 ] && [ -e "$SYN_STRAY" ]; then
   [ -e "$WORK/synthesis.json" ] || mv "$SYN_STRAY" "$WORK/synthesis.json"
   rm -f "$SYN_STRAY"
