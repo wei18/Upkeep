@@ -35,6 +35,8 @@ action에는 두 종류가 있는데, 둘 다 이 팬아웃을 표현할 수 없
 
 따라서 composite action(`- uses: wei18/upkeep@v2`)도 *가능*합니다 — reviewer가 순차가 되는 대가로. Upkeep은 reviewer를 병렬·각자 격리로 유지하기 위해 의도적으로 재사용 가능한 workflow 형태를 선택했습니다. 예약 감사라면 느린 순차 경로도 허용 가능하지만, 우리는 병렬성과 깔끔한 장애 격리를 우선했습니다.
 
+v2.1부터 저장소 루트는 바로 이 트레이드오프를 담은 `action.yml`(`- uses: wei18/upkeep@v2`)을 제공합니다 — 순차 실행과 맞바꿔 GitHub Marketplace에 등록할 수 있는 대안 경로입니다. reviewer 병렬성이 중요할 때는 위의 재사용 가능한 workflow가 여전히 권장되는 통합 경로입니다.
+
 ## 실제로 포기하는 것
 
 호출부 구문뿐입니다. `- uses: owner/action@ref` 대신 `jobs.<id>.uses: owner/repo/.github/workflows/file.yml@ref`를 사용합니다. 그 외에는 모두 action과 동일합니다: `with:`로 inputs, `secrets:`로 secrets, `@v1`로 버전 고정.

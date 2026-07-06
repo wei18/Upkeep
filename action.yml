@@ -1,0 +1,137 @@
+name: Upkeep Audit
+description: >-
+  AI audit crew for repo drift — stale docs, specs that no longer match the
+  code, orphaned assets, broken conventions. Reports findings with evidence;
+  never edits or deletes your files.
+author: Wei18
+branding:
+  icon: search
+  color: purple
+
+# NOTE: this is a convenience wrapper around the reviewer/synthesis/report
+# steps in .github/workflows/audit.yml. A composite action runs as a single
+# job with no strategy.matrix, so reviewers execute sequentially here instead
+# of in parallel. See docs/en/why-reusable-workflow.md for why the primary
+# integration path is the reusable workflow (`uses: wei18/upkeep/.github/workflows/audit.yml@v2`)
+# rather than this action. Prefer the reusable workflow when reviewer
+# parallelism matters (large repos, many reviewers enabled).
+inputs:
+  model:
+    description: Claude model to run reviewers/synthesis with
+    default: claude-opus-4-8
+  max_turns:
+    description: Max turns per Claude Code Action call
+    default: '30'
+  issue_label:
+    description: Label for the upserted tracking issue
+    default: audit
+  rubric_lang:
+    description: 'Reviewer rubric / prompt language: en | zh-TW | ...'
+    default: en
+  claude_code_oauth_token:
+    description: >-
+      Claude Code OAuth token, generated locally with `claude setup-token`
+      (Claude Pro/Max subscription; usage counts against your subscription).
+    required: true
+  github_token:
+    description: Passed to claude-code-action so it skips the Claude GitHub App requirement, and used to upsert the tracking issue.
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - id: discovery
+      uses: wei18/upkeep/.github/actions/discovery@v2
+
+    - if: contains(fromJSON(steps.discovery.outputs.reviewers), 'docs_staleness')
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/reviewer@v2
+      with:
+        reviewer: docs_staleness
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always() && contains(fromJSON(steps.discovery.outputs.reviewers), 'code_hygiene')
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/reviewer@v2
+      with:
+        reviewer: code_hygiene
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always() && contains(fromJSON(steps.discovery.outputs.reviewers), 'spec_flow')
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/reviewer@v2
+      with:
+        reviewer: spec_flow
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always() && contains(fromJSON(steps.discovery.outputs.reviewers), 'visual_icon')
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/reviewer@v2
+      with:
+        reviewer: visual_icon
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always() && contains(fromJSON(steps.discovery.outputs.reviewers), 'duplicate_orphan')
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/reviewer@v2
+      with:
+        reviewer: duplicate_orphan
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always() && contains(fromJSON(steps.discovery.outputs.reviewers), 'convention')
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/reviewer@v2
+      with:
+        reviewer: convention
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always() && contains(fromJSON(steps.discovery.outputs.reviewers), 'i18n')
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/reviewer@v2
+      with:
+        reviewer: i18n
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always()
+      continue-on-error: true
+      uses: wei18/upkeep/.github/actions/synthesis@v2
+      with:
+        model: ${{ inputs.model }}
+        max_turns: ${{ inputs.max_turns }}
+        rubric_lang: ${{ inputs.rubric_lang }}
+        claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
+        github_token: ${{ inputs.github_token }}
+
+    - if: always()
+      uses: wei18/upkeep/.github/actions/report@v2
+      with:
+        issue_label: ${{ inputs.issue_label }}
+        github_token: ${{ inputs.github_token }}

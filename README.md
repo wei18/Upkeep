@@ -116,6 +116,44 @@ jobs:
 
 > Already on `@v1`? It keeps working but is frozen — switch the tag to `@v2`. The interface is identical.
 
+### Or as a Marketplace action
+
+Prefer the familiar `- uses:` step syntax, or want Upkeep to show up in the
+[GitHub Marketplace](https://github.com/marketplace)? Use the **Upkeep Audit**
+action instead — same engine, same inputs, but the reviewers run one after
+another instead of in parallel (see
+[`docs/why-reusable-workflow.md`](docs/en/why-reusable-workflow.md) for why
+the reusable workflow above is the primary path):
+
+```yaml
+name: repo audit
+on:
+  schedule:
+    - cron: '0 3 * * 1'   # weekly, Monday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: wei18/upkeep@v2
+        with:
+          model: claude-opus-4-8               # optional
+          issue_label: audit                    # optional; default: audit
+          rubric_lang: en                       # optional; reviewer language: en | zh-TW
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+```
+
+Same requirements as above: a repo secret named `CLAUDE_CODE_OAUTH_TOKEN`
+(from `claude setup-token`) and the `permissions` block, now on the job
+itself since a step action can't declare its own permissions.
+
 ## Reviewers
 
 | Name | Default | Checks |

@@ -35,6 +35,8 @@ action 有两种，两种都无法表达这种扇出：
 
 所以 composite action（`- uses: wei18/upkeep@v2`）*是*做得到的——代价是 reviewer 变串行。Upkeep 刻意选择 reusable workflow 形式，以保持 reviewer 并行且各自隔离。对排程审计而言，较慢的串行路径其实可接受；但我们偏好并行与干净的故障隔离。
 
+v2.1 起，repo root 已提供对应这个取舍的 `action.yml`（`- uses: wei18/upkeep@v2`）——一个串行执行、可在 GitHub Marketplace 曝光的替代路径。当 reviewer 并行性重要时，上面的 reusable workflow 仍是推荐的集成路径。
+
 ## 你实际放弃的是什么
 
 只有调用端语法。用 `jobs.<id>.uses: owner/repo/.github/workflows/file.yml@ref` 取代 `- uses: owner/action@ref`。其余一切都跟 action 一样：用 `with:` 传 inputs、用 `secrets:` 传 secrets、用 `@v1` 钉版本。
