@@ -35,6 +35,8 @@ There are two kinds of action, and neither can express that fan-out:
 
 So a composite action (`- uses: wei18/upkeep@v2`) *is* possible — at the cost of sequential reviewers. Upkeep deliberately chose the reusable-workflow form to keep reviewers parallel and independently isolated. For a scheduled audit, the slower sequential path would be acceptable; we preferred parallelism and clean failure isolation.
 
+As of v2.1, the repo root ships exactly that trade-off as `action.yml` (`- uses: wei18/upkeep@v2`) — a sequential alternative that gets Upkeep listed on the GitHub Marketplace. The reusable workflow above stays the recommended integration path whenever reviewer parallelism matters.
+
 ## What you actually give up
 
 Only the call-site syntax. `jobs.<id>.uses: owner/repo/.github/workflows/file.yml@ref` instead of `- uses: owner/action@ref`. Everything else behaves like an action: inputs via `with:`, secrets via `secrets:`, version pinning with `@v1`.
