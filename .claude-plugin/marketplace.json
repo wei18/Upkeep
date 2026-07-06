@@ -9,7 +9,7 @@
       "name": "upkeep",
       "source": "./skills/upkeep-audit",
       "description": "Run the Upkeep repo audit from Claude Code: drift findings by severity plus a self-contained HTML report. Never edits your files.",
-      "version": "2.0.1",
+      "version": "2.1.0",
       "author": {
         "name": "Wei18"
       }
