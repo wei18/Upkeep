@@ -1,8 +1,5 @@
 name: Upkeep Audit
-description: >-
-  AI audit crew for repo drift — stale docs, specs that no longer match the
-  code, orphaned assets, broken conventions. Reports findings with evidence;
-  never edits or deletes your files.
+description: AI audit crew for repo drift - finds stale docs, mismatched specs, and orphaned assets. Evidence-based, output-only.
 author: Wei18
 branding:
   icon: search
