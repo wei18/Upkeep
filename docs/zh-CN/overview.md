@@ -8,7 +8,7 @@
 
 ## 流水线：扇出 → 汇总 → 报告
 
-Upkeep 有两个共用同一引擎的入口：CI 用的可复用 `workflow_call` workflow，以及在本地运行的 Claude Code skill / plugin（或纯脚本）。两者的流水线都是相同的五个阶段：Discovery、Consolidate 与 Report 为确定性（无 LLM）；并行的 reviewers 与 Synthesis 才是 LLM 驱动的阶段。
+Upkeep 有三种共用同一引擎的集成形态：CI 用的可复用 `workflow_call` workflow、供偏好常见 step 语法者使用的 Marketplace composite action（`- uses: wei18/upkeep@v2`，同一套引擎与输入，但 reviewer 依次执行而非并行），以及在本地运行的 Claude Code skill / plugin（或纯脚本）。三者的流水线都是相同的五个阶段：Discovery、Consolidate 与 Report 为确定性（无 LLM）；并行的 reviewers 与 Synthesis 才是 LLM 驱动的阶段。
 
 **1. 发现（Discovery）**
 

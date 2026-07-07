@@ -74,6 +74,10 @@ Key points:
 
 The same pipeline runs locally via `scripts/local-audit.sh <target>`: discovery → parallel `claude -p` reviewer subprocesses → synthesis → report. All intermediates (inventory, prompts, findings, synthesis) live in a `mktemp` work dir granted to Claude via `--add-dir` — nothing is written into the target repo. Local runs produce the same self-contained HTML report; instead of upserting a GitHub issue, the issue markdown is printed as the terminal summary. `skills/upkeep-audit/SKILL.md` is a thin Claude Code wrapper around the script: it maintains a clone in `~/.cache/upkeep`, runs the audit, and summarizes findings in chat. The skill is distributed three ways, all pointing at the same directory: as a Claude Code plugin (`.claude-plugin/marketplace.json` at the repo root lists `skills/upkeep-audit/` as a single-skill plugin named `upkeep`, installed via `/plugin install upkeep@upkeep`), via `npx skills add wei18/upkeep --skill upkeep-audit` (vercel-labs/skills flat layout), or by manual copy into `~/.claude/skills/`. Distribution is packaging only — the CI workflow remains a direct pipeline entry and does not route through the skill.
 
+### Marketplace Composite Action
+
+A third integration path packages the same engine as a composite action at the repo root (`action.yml`), giving callers the conventional `- uses: wei18/upkeep@v2` step syntax and a listing on the [GitHub Marketplace](https://github.com/marketplace). Because a composite action is a single job with no `strategy.matrix`, its `discovery` → `reviewer` (×7) → `synthesis` → `report` steps run sequentially instead of in parallel — same engine, same inputs, just slower on repos with many enabled reviewers. See `docs/why-reusable-workflow.md` for why the reusable workflow above remains the primary path. Distribution here is packaging only, same as the skill: `action.yml` calls the same `.github/actions/<x>@v2` sub-actions the reusable workflow uses.
+
 ---
 
 ## 2. Reviewer Team
@@ -216,6 +220,7 @@ Expected structure:
 
 ```
 repo-audit-action/                   # local directory (published name: Upkeep)
+├── action.yml                        # composite action (Marketplace listing): `uses: wei18/upkeep@v2`, sequential reviewer steps
 ├── .github/
 │   ├── workflows/audit.yml          # reusable workflow (on: workflow_call): jobs/matrix orchestration
 │   └── actions/                     # composite sub-actions (used by the workflow's jobs; carry Upkeep's own code)

@@ -8,7 +8,7 @@ Periodic human review catches some of it, but it requires keeping the full conte
 
 ## The pipeline: fan-out → synthesis → report
 
-Upkeep has two entry points that share one engine: a reusable `workflow_call` workflow for CI, and a local Claude Code skill / plugin (or plain script) for running on your machine. Either way the pipeline is the same five stages: Discovery, Consolidate, and Report are deterministic (no LLM); the parallel reviewers and Synthesis are the LLM-driven stages.
+Upkeep has three integration paths that share one engine: a reusable `workflow_call` workflow for CI, a Marketplace composite action (`- uses: wei18/upkeep@v2`, same engine and inputs, reviewers run sequentially instead of in parallel) for callers who want the conventional step syntax, and a local Claude Code skill / plugin (or plain script) for running on your machine. Either way the pipeline is the same five stages: Discovery, Consolidate, and Report are deterministic (no LLM); the parallel reviewers and Synthesis are the LLM-driven stages.
 
 **1. Discovery**
 
