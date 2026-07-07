@@ -74,6 +74,10 @@
 
 同一套 pipeline 可通过 `scripts/local-audit.sh <target>` 在本地执行：discovery → 并行 `claude -p` reviewer 子进程 → synthesis → report。所有中间产物（inventory、prompts、findings、synthesis）都放在 `mktemp` 工作目录，通过 `--add-dir` 授权给 Claude——不会写入目标 repo。本地执行产出同一份 self-contained HTML 报告；不会 upsert GitHub issue，而是把 issue markdown 打印出来作为终端摘要。`skills/upkeep-audit/SKILL.md` 是包装此脚本的 Claude Code 薄包装：维护 `~/.cache/upkeep` 的 clone、执行审计、在对话中总结 findings。此 skill 以三种方式发布，均指向同一个目录：作为 Claude Code plugin（repo 根目录的 `.claude-plugin/marketplace.json` 将 `skills/upkeep-audit/` 列为名为 `upkeep` 的 single-skill plugin，通过 `/plugin install upkeep@upkeep` 安装）、通过 `npx skills add wei18/upkeep --skill upkeep-audit`（vercel-labs/skills 扁平布局），或手动复制到 `~/.claude/skills/`。发布仅是打包层面——CI workflow 仍是直接的 pipeline 入口，不会绕经此 skill。
 
+### Marketplace Composite Action
+
+第三种集成形态把同一套引擎打包成 repo 根目录下的一个 composite action（`action.yml`），提供常见的 `- uses: wei18/upkeep@v2` step 语法，并可上架 [GitHub Marketplace](https://github.com/marketplace)。由于 composite action 是单一 job、不能使用 `strategy.matrix`，它的 `discovery` → `reviewer`（×7）→ `synthesis` → `report` 各 step 会依次执行而非并行——同一套引擎、同样的输入，只是在启用较多 reviewer 的 repo 上会更慢。为何上面的 reusable workflow 仍是主要路径，见 `docs/why-reusable-workflow.md`。这里的发布同样仅是打包层面，与 skill 相同：`action.yml` 调用的是 reusable workflow 所用的同一批 `.github/actions/<x>@v2` 子 action。
+
 ---
 
 ## 2. Reviewer 团队
@@ -216,6 +220,7 @@ report:
 
 ```
 repo-audit-action/                   # 本地目录（发布名 Upkeep）
+├── action.yml                        # composite action（用于 Marketplace 上架）：`uses: wei18/upkeep@v2`，reviewer step 依次执行
 ├── .github/
 │   ├── workflows/audit.yml          # 可复用 workflow（on: workflow_call）：jobs/matrix 编排
 │   └── actions/                     # composite 子 action（被 workflow 的 job uses，自带 Upkeep 代码）

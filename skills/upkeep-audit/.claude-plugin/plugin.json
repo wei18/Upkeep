@@ -1,7 +1,7 @@
 {
   "name": "upkeep",
   "description": "Run the Upkeep repo audit locally against any repository path — output-only drift report with evidence and severity.",
-  "version": "2.0.1",
+  "version": "2.1.1",
   "author": {
     "name": "Wei18"
   },

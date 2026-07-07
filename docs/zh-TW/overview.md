@@ -8,7 +8,7 @@ Repo 會隨時間累積偏差。函式重構了，但文件區塊仍停留在舊
 
 ## Pipeline 架構：展開 → 彙整 → 報告
 
-Upkeep 有兩個共用同一引擎的進入點：CI 用的可重用 `workflow_call` workflow，以及在本機執行的 Claude Code skill / plugin（或純腳本）。兩者的 pipeline 都是相同的五個階段：Discovery、Consolidate 與 Report 為確定性（無 LLM）；平行的 reviewers 與 Synthesis 才是 LLM 驅動的階段。
+Upkeep 有三種共用同一引擎的整合形態：CI 用的可重用 `workflow_call` workflow、給偏好慣用 step 語法者使用的 Marketplace composite action（`- uses: wei18/upkeep@v2`，同一套引擎與輸入，但 reviewer 依序執行而非並行），以及在本機執行的 Claude Code skill / plugin（或純腳本）。三者的 pipeline 都是相同的五個階段：Discovery、Consolidate 與 Report 為確定性（無 LLM）；平行的 reviewers 與 Synthesis 才是 LLM 驅動的階段。
 
 **1. 探索（Discovery）**
 

@@ -4,9 +4,10 @@ Local dir is `repo-audit-action/`; the **published name is `wei18/upkeep`** — 
 
 ## What this is
 
-An AI repo auditor that catches drift (stale docs, spec/code mismatch, orphaned assets, convention violations). Pipeline: **discovery → parallel reviewers → synthesis → HTML report**. Two entry points, one engine:
+An AI repo auditor that catches drift (stale docs, spec/code mismatch, orphaned assets, convention violations). Pipeline: **discovery → parallel reviewers → synthesis → HTML report**. Three entry points, one engine:
 
 - **CI**: reusable workflow `.github/workflows/audit.yml` (`on: workflow_call`) + composite actions under `.github/actions/`. Runs on the *caller's* checkout; Upkeep's code arrives via `uses: wei18/upkeep/.github/actions/<x>@<tag>`. Each reviewer is an independent matrix job. Upserts one tracking issue.
+- **Marketplace**: root `action.yml`, a composite action for the conventional `- uses: wei18/upkeep@<tag>` step syntax and a GitHub Marketplace listing. Same engine and inputs as the reusable workflow, but runs as a single job so reviewers execute sequentially instead of in parallel.
 - **Local**: `scripts/local-audit.sh <target>` — same flow, `claude -p` subprocesses, temp-dir intermediates via `--add-dir`. Never creates issues; prints the summary instead. `skills/upkeep-audit/SKILL.md` is a thin wrapper (clones engine to `~/.cache/upkeep`, runs script, summarizes). The CI workflow does **not** route through the skill.
 
 ## Hard invariants

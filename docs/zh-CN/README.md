@@ -116,6 +116,43 @@ jobs:
 
 > 还在用 `@v1`？它仍可运行但已冻结——把 tag 换成 `@v2` 即可。接口完全相同。
 
+### 或作为 Marketplace action
+
+偏好熟悉的 `- uses:` step 语法，或想让 Upkeep 出现在
+[GitHub Marketplace](https://github.com/marketplace)？改用 **Upkeep Audit**
+action——同一套引擎、同样的输入参数，但审查器会依次执行，而非并行执行（原因见
+[`docs/why-reusable-workflow.md`](why-reusable-workflow.md)，说明为何上面的
+reusable workflow 才是主要路径）：
+
+```yaml
+name: repo audit
+on:
+  schedule:
+    - cron: '0 3 * * 1'   # weekly, Monday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: wei18/upkeep@v2
+        with:
+          model: claude-opus-4-8               # optional
+          issue_label: audit                    # optional; default: audit
+          rubric_lang: en                       # optional; reviewer language: en | zh-TW
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+```
+
+与上方相同的要求：一个名为 `CLAUDE_CODE_OAUTH_TOKEN` 的仓库 secret（通过
+`claude setup-token` 生成）以及 `permissions` 块，现在放在 job 本身上，因为
+step action 无法自行声明权限。
+
 ## 审查器
 
 | 名称 | 默认状态 | 检查内容 |

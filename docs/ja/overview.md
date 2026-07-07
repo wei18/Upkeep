@@ -8,7 +8,7 @@
 
 ## パイプライン: ファンアウト → 統合 → レポート
 
-Upkeep には同一のエンジンを共有する2つのエントリーポイントがあります。CI 用の再利用可能な `workflow_call` workflow と、ローカルで実行する Claude Code skill / plugin（あるいは単なるスクリプト）です。いずれの場合もパイプラインは同じ5つのステージです。Discovery、Consolidate、Report は決定論的（LLM なし）であり、並列の reviewers と Synthesis が LLM 駆動のステージです。
+Upkeep には同一のエンジンを共有する3つの統合パスがあります。CI 用の再利用可能な `workflow_call` workflow、おなじみの step 構文を使いたい場合向けの Marketplace composite action（`- uses: wei18/upkeep@v2`。エンジンと入力は同じですが、reviewer は並列ではなく順番に実行されます）、そしてローカルで実行する Claude Code skill / plugin（あるいは単なるスクリプト）です。いずれの場合もパイプラインは同じ5つのステージです。Discovery、Consolidate、Report は決定論的（LLM なし）であり、並列の reviewers と Synthesis が LLM 駆動のステージです。
 
 **1. ディスカバリー**
 

@@ -116,6 +116,44 @@ jobs:
 
 > まだ `@v1` をお使いですか？引き続き動作しますが凍結されています——タグを `@v2` に切り替えてください。インターフェースは同一です。
 
+### Marketplace action として使う場合
+
+おなじみの `- uses:` step 構文を使いたい場合や、Upkeep を
+[GitHub Marketplace](https://github.com/marketplace) に表示させたい場合は、
+**Upkeep Audit** action を代わりに使用してください——同じエンジン、同じ入力
+ですが、レビュアーは並列ではなく順番に実行されます（上記の reusable workflow
+が主要なパスである理由については
+[`docs/why-reusable-workflow.md`](why-reusable-workflow.md) を参照）：
+
+```yaml
+name: repo audit
+on:
+  schedule:
+    - cron: '0 3 * * 1'   # weekly, Monday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: wei18/upkeep@v2
+        with:
+          model: claude-opus-4-8               # optional
+          issue_label: audit                    # optional; default: audit
+          rubric_lang: en                       # optional; reviewer language: en | zh-TW
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+```
+
+上記と同じ要件です：`CLAUDE_CODE_OAUTH_TOKEN` という名前のリポジトリ secret
+（`claude setup-token` で生成）と `permissions` ブロック。step action は
+自身の permissions を宣言できないため、今回は job 自体に付与します。
+
 ## レビュアー
 
 | 名前 | デフォルト | チェック内容 |

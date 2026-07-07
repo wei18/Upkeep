@@ -8,7 +8,7 @@
 
 ## 파이프라인: fan-out → 종합 → 보고
 
-Upkeep에는 동일한 엔진을 공유하는 두 개의 진입점이 있습니다. CI용 재사용 가능한 `workflow_call` workflow와, 로컬에서 실행하는 Claude Code skill / plugin(또는 순수 스크립트)입니다. 어느 쪽이든 파이프라인은 동일한 다섯 단계입니다. Discovery, Consolidate, Report는 결정적(LLM 없음)이며, 병렬 reviewers와 Synthesis가 LLM 기반 단계입니다.
+Upkeep에는 동일한 엔진을 공유하는 세 가지 통합 경로가 있습니다. CI용 재사용 가능한 `workflow_call` workflow, 익숙한 step 문법을 선호하는 경우를 위한 Marketplace composite action(`- uses: wei18/upkeep@v2`, 동일한 엔진과 입력이지만 reviewer가 병렬이 아니라 차례로 실행됨), 그리고 로컬에서 실행하는 Claude Code skill / plugin(또는 순수 스크립트)입니다. 어느 쪽이든 파이프라인은 동일한 다섯 단계입니다. Discovery, Consolidate, Report는 결정적(LLM 없음)이며, 병렬 reviewers와 Synthesis가 LLM 기반 단계입니다.
 
 **1. 탐색(Discovery)**
 

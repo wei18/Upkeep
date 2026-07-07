@@ -74,6 +74,10 @@
 
 同じパイプラインは `scripts/local-audit.sh <target>` でローカルでも実行できる：discovery → 並列の `claude -p` レビュアーサブプロセス → synthesis → report。中間生成物（inventory、prompts、findings、synthesis）はすべて `mktemp` の作業ディレクトリに置かれ、`--add-dir` で Claude に許可される——対象リポジトリには何も書き込まない。ローカル実行でも同じセルフコンテインドな HTML レポートを生成する。GitHub issue の upsert は行わず、issue の markdown をターミナルサマリーとして出力する。`skills/upkeep-audit/SKILL.md` はこのスクリプトの薄い Claude Code ラッパーで、`~/.cache/upkeep` のクローンを維持し、監査を実行し、findings をチャットで要約する。この skill は 3 つの方法で配布され、いずれも同じディレクトリを指す：Claude Code plugin として（リポジトリルートの `.claude-plugin/marketplace.json` が `skills/upkeep-audit/` を `upkeep` という名前の single-skill plugin として登録し、`/plugin install upkeep@upkeep` でインストール）、`npx skills add wei18/upkeep --skill upkeep-audit` 経由（vercel-labs/skills のフラットレイアウト）、または `~/.claude/skills/` への手動コピー。配布はあくまでパッケージングであり——CI workflow は引き続き直接のパイプラインエントリのままで、skill を経由しない。
 
+### Marketplace Composite Action
+
+3 つ目の統合パスとして、同じエンジンをリポジトリルートの composite action（`action.yml`）としてパッケージ化し、おなじみの `- uses: wei18/upkeep@v2` step 構文と [GitHub Marketplace](https://github.com/marketplace) への掲載を可能にする。composite action は `strategy.matrix` を使えない単一 job であるため、その `discovery` → `reviewer`（×7）→ `synthesis` → `report` の各ステップは並列ではなく順番に実行される——エンジンと入力は同じだが、有効な reviewer が多いリポジトリでは実行が遅くなる。上記の reusable workflow が主要なパスであり続ける理由は `docs/why-reusable-workflow.md` を参照。ここでの配布も skill と同様にあくまでパッケージングであり、`action.yml` は reusable workflow が使うのと同じ `.github/actions/<x>@v2` サブアクションを呼び出している。
+
 ---
 
 ## 2. Reviewer チーム
@@ -216,6 +220,7 @@ report:
 
 ```
 repo-audit-action/                   # ローカルディレクトリ（公開名 Upkeep）
+├── action.yml                        # composite action（Marketplace 掲載用）：`uses: wei18/upkeep@v2`、reviewer ステップは順番に実行
 ├── .github/
 │   ├── workflows/audit.yml          # 再利用可能 workflow（on: workflow_call）：jobs/matrix オーケストレーション
 │   └── actions/                     # composite サブ action（workflow の job が uses で参照、Upkeep コードを内包）
