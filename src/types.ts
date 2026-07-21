@@ -23,7 +23,7 @@ export type Category =
 export interface ReviewerConfig {
   enabled: boolean;
   paths?: string[];
-  rubric?: string; // repo 內相對路徑
+  rubric?: string; // path relative to repo root
 }
 
 export interface AuditConfig {
@@ -34,18 +34,18 @@ export interface AuditConfig {
 }
 
 export interface FileEntry {
-  path: string;          // 相對 repo root，POSIX 分隔
+  path: string;          // relative to repo root, POSIX separators
   modality: Modality;
   category: Category;
   sizeBytes: number;
-  hash: string;          // sha256 hex；binary 也算
-  oversizedText: boolean; // 文字類且 > MAX_FILE_KB
-  lastCommitISO: string | null; // 無 git 記錄為 null
-  referencedBy: string[];       // 哪些檔在內文以路徑 token 提及此檔 basename（word-boundary；TS 源也認 .js specifier）
+  hash: string;          // sha256 hex; computed for binary too
+  oversizedText: boolean; // text-like and > MAX_FILE_KB
+  lastCommitISO: string | null; // null when there's no git record
+  referencedBy: string[];       // files whose body mentions this file's basename as a path token (word-boundary; TS sources also match a .js specifier)
 }
 
 export interface ConventionSource {
-  path: string;          // 探索到的規範來源檔
+  path: string;          // discovered convention-source file
   kind: 'claude_md' | 'skill' | 'workflow' | 'gha_workflow' | 'audit_yml';
 }
 
@@ -70,8 +70,8 @@ export const SSOT_DIRECTIONS = ['stale_a', 'stale_b', 'uncertain', 'n/a'] as con
 export type SsotDirection = typeof SSOT_DIRECTIONS[number];
 
 export interface Finding {
-  file: string;            // 主體檔（跨檔問題放主檔）
-  related: string[];       // 關聯檔（可空陣列）
+  file: string;            // primary file (cross-file issues go under the primary)
+  related: string[];       // related files (may be an empty array)
   reviewer: ReviewerName;
   category: FindingCategory;
   problem: string;
@@ -84,27 +84,27 @@ export interface Finding {
 
 export interface ReviewerOutput {
   reviewer: ReviewerName;
-  status: 'ok' | 'failed';  // failed 時 findings 必為空
+  status: 'ok' | 'failed';  // findings must be empty when failed
   findings: Finding[];
 }
 
 export interface Theme {
   title: string;
   narrative: string;
-  related_files: string[];   // 此主題涵蓋的檔路徑
+  related_files: string[];   // file paths covered by this theme
   priority: Severity;
 }
 
 export interface SynthesisOutput {
   themes: Theme[];
-  semantic_duplicates: string[][]; // 每組為 "reviewer|file|category" 鍵
+  semantic_duplicates: string[][]; // each group is a set of "reviewer|file|category" keys
   executive_summary: string;
-  status: 'ok' | 'failed';         // failed 時 themes 必為空
+  status: 'ok' | 'failed';         // themes must be empty when failed
 }
 
 export interface ConsolidatedFinding extends Finding {
-  // 繼承的 `reviewer`（單數）= 代表 finding 的擁有者；顯示一律用 `reviewers`（聯集）
-  reviewers: ReviewerName[];       // 回報此 file+category 的所有 reviewer（聯集）
+  // Inherited `reviewer` (singular) = the owner of the representative finding; display always uses `reviewers` (the union)
+  reviewers: ReviewerName[];       // all reviewers that reported this file+category (union)
 }
 
 export interface ReportStats {

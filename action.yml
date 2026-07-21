@@ -40,7 +40,7 @@ runs:
     - id: discovery
       uses: wei18/upkeep/.github/actions/discovery@v2
 
-    - if: contains(fromJSON(steps.discovery.outputs.reviewers), 'docs_staleness')
+    - if: always() && contains(fromJSON(steps.discovery.outputs.reviewers), 'docs_staleness')
       continue-on-error: true
       uses: wei18/upkeep/.github/actions/reviewer@v2
       with:

@@ -4,7 +4,7 @@ export interface IssueRef {
   body: string;
 }
 
-// 回傳第一個 body 含 marker 的 issue number；無則 null。
+// Returns the number of the first issue whose body contains the marker; null if none.
 export function findMarkedIssue(issues: IssueRef[], marker: string): number | null {
   const hit = issues.find((i) => typeof i.body === 'string' && i.body.includes(marker));
   return hit ? hit.number : null;

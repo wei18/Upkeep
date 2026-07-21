@@ -38,8 +38,9 @@ export function consolidate(
     if (arr) arr.push(fnd); else groups.set(key, [fnd]);
   }
 
-  // synthesis 判定的語意重複（鍵格式 "reviewer|file|category"）再合併一輪；
-  // 去掉 reviewer 前綴即得本層的 file|category 群組鍵，查無對應群組的鍵忽略
+  // Merge once more using the semantic duplicates synthesis identified (key format
+  // "reviewer|file|category"); stripping the reviewer prefix gives this layer's
+  // file|category group key, and keys with no matching group are ignored.
   if (synthesis !== null && synthesis.status === 'ok') {
     for (const dup of synthesis.semantic_duplicates) {
       const keys = uniq(dup.map((k) => k.slice(k.indexOf('|') + 1))).filter((k) => groups.has(k));
@@ -51,7 +52,7 @@ export function consolidate(
 
   const merged: ConsolidatedFinding[] = [];
   for (const group of groups.values()) {
-    // 代表：severity×confidence 最高；同分時依 reviewer 列舉序（design §4），不靠載入順序
+    // Representative: highest severity x confidence; ties break by reviewer enumeration order (design §4), not load order
     const rep = [...group].sort((a, b) => cmp(a, b) || (REVIEWER_RANK[a.reviewer] - REVIEWER_RANK[b.reviewer]))[0];
     merged.push({
       ...rep,
@@ -61,7 +62,7 @@ export function consolidate(
   }
   merged.sort((a, b) => cmp(a, b) || a.file.localeCompare(b.file));
 
-  // synthesis 只在 status === 'ok' 才採用；用 if 讓 TS 正確 narrow synthesis 非空
+  // synthesis is only adopted when status === 'ok'; using an if lets TS correctly narrow synthesis to non-null
   let themes: Theme[] = [];
   let executiveSummary = '';
   if (synthesis !== null && synthesis.status === 'ok') {
