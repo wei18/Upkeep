@@ -45,3 +45,4 @@ Root `README.md` is the en base; `docs/{zh-TW,zh-CN,ja,ko}/` each mirror `README
 - Degradation over crashing: malformed reviewer/JSON input becomes `{status: 'failed', findings: []}` via the finalize helpers in `src/report.ts` — follow that pattern for new parsers.
 - Specs go in `docs/superpowers/specs/`, plans in `docs/superpowers/plans/` (dated, kebab-case).
 - Before relying on external tool behavior (plugin schema, CLI flags), verify against official docs — no trial-and-error reverse engineering.
+- In-source comments in `src/` are English only, matching `README.md`'s en base.

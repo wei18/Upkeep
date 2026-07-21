@@ -18,7 +18,7 @@ function discoverConventions(repoRoot: string, paths: string[]): ConventionSourc
   };
   add('CLAUDE.md', 'claude_md');
   add('.claude/audit.yml', 'audit_yml');
-  // 目錄型來源從已列出的 paths 前綴過濾（重用，不再呼叫一次 git ls-files）
+  // Directory-based sources are filtered by prefix from the already-listed paths (reused, so we avoid another git ls-files call)
   for (const f of paths) {
     if (f.startsWith('.claude/skills/')) out.push({ path: f, kind: 'skill' });
     else if (f.startsWith('.claude/workflows/')) out.push({ path: f, kind: 'workflow' });
@@ -37,7 +37,7 @@ export function discover(repoRoot: string): Inventory {
     try {
       content = readFileSync(join(repoRoot, p));
     } catch {
-      return []; // 跳過無法當檔讀的項目：submodule gitlink、目錄、損壞 symlink
+      return []; // skip entries that can't be read as a file: submodule gitlink, directory, broken symlink
     }
     const { modality, category } = classify(p, content);
     return [{ path: p, content, modality, category }];

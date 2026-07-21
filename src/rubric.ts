@@ -4,7 +4,7 @@ import type { Inventory, ReviewerName, Category } from './types.js';
 
 const ALL: Category[] = ['code', 'doc', 'spec', 'visual', 'flow', 'icon', 'config', 'other'];
 
-// 每個 reviewer 負責的 file 類別（target 選擇用）
+// File categories each reviewer is responsible for (used for target selection)
 const DOMAINS: Record<ReviewerName, Category[]> = {
   docs_staleness: ['doc'],
   code_hygiene: ['code'],
@@ -12,19 +12,19 @@ const DOMAINS: Record<ReviewerName, Category[]> = {
   visual_icon: ['visual', 'icon'],
   duplicate_orphan: ALL,
   convention: ALL,
-  i18n: [], // i18n 只管 code 層在地化字串（design §2/§2.1），無對應 file category；target 由 DEFAULT_PATHS 的 glob 決定，不與 docs_staleness 的多語 doc 範疇重疊
+  i18n: [], // i18n only covers code-level localization strings (design §2/§2.1), with no corresponding file category; targets are decided by the DEFAULT_PATHS globs and don't overlap docs_staleness's multi-language doc scope
 };
 
-// 無 category 對應的 reviewer 之預設 target globs（audit.yml 的 reviewers.<name>.paths 優先）
+// Default target globs for reviewers with no category mapping (audit.yml's reviewers.<name>.paths takes precedence)
 const DEFAULT_PATHS: Partial<Record<ReviewerName, string[]>> = {
   i18n: ['**/*.lproj/**', '**/*.strings', '**/*.stringsdict', '**/*.xcstrings', '**/locales/**', '**/i18n/**'],
 };
 
 export interface RubricBundle {
-  builtinRubric: string;         // action 內建 rubric 檔絕對路徑
-  conventionSources: string[];   // repo 規範來源（相對路徑）
-  explicitRubric: string | null; // audit.yml reviewers.<name>.rubric 或 null
-  targetFiles: string[];         // 此 reviewer 要看的檔（相對路徑）
+  builtinRubric: string;         // absolute path to the action's built-in rubric file
+  conventionSources: string[];   // repo convention-source files (relative paths)
+  explicitRubric: string | null; // audit.yml reviewers.<name>.rubric, or null
+  targetFiles: string[];         // files this reviewer should look at (relative paths)
 }
 
 function globToRegex(glob: string): RegExp {
@@ -34,7 +34,7 @@ function globToRegex(glob: string): RegExp {
     if (c === '*') {
       if (glob[i + 1] === '*') {
         i++;
-        // `**/` 應錨在路徑區段邊界（含零段），避免 `**/README.md` 誤中 `xREADME.md`
+        // `**/` should anchor on a path-segment boundary (including zero segments), so `**/README.md` doesn't wrongly match `xREADME.md`
         if (glob[i + 1] === '/') { re += '(?:.*/)?'; i++; }
         else re += '.*';
       } else {
