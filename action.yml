@@ -23,7 +23,7 @@ inputs:
     description: Label for the upserted tracking issue
     default: audit
   rubric_lang:
-    description: 'Reviewer rubric / prompt language: en | zh-TW | ...'
+    description: 'Reviewer rubric / prompt language: en or zh-TW'
     default: en
   claude_code_oauth_token:
     description: >-

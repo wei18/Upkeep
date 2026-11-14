@@ -1,8 +1,7 @@
 # Upkeep — 設計ドキュメント
 
-- ステータス：実装済みでリリース；v2 として再ポジショニング（Claude Code plugin + skill 配布）— 本 spec はリリース済みの挙動を追跡する
-- 日付：2026-06-04（設計）；2026-06-05 リリース；v2 再ポジショニング 2026-06-12
-- 配置：独立リポジトリ `upkeep/`、仕様は `docs/design.md`（§6 参照）
+- ステータス：リリース済み。本 spec は現在の挙動を記述する。
+- 配置：リポジトリ `wei18/upkeep`。英語 base：`docs/en/design.md`、各言語の翻訳：`docs/<locale>/design.md`（§6 参照）
 - 自己制約：**本 spec は SSOT であり、実装に追随して常に最新を維持すること**（このツール自体がドリフトを検出するものであり、spec 自身がドリフトしてはならない）
 
 ---
@@ -29,40 +28,40 @@
 
 **オーケストレーションモデル：fan-out → reduce（matrix + synthesis）、LLM リードなし。** 有効化された各 reviewer は独立した matrix **job** を実行する（1 つの `claude-code-action` ステップを含む。`fail-fast: false` + `continue-on-error` で障害を隔離）。各 reviewer は構造化された findings を出力し、その後 1 つの synthesis job（単一の LLM）が全ての findings を読み込み、セマンティックレベルでの横断的な関連付けを行う。「単一 run 内でサブエージェントを spawn する」方式には依存しない（その能力は実証されているが、job 単位の方が決定性・隔離性・ゼロ残留リスクの面で優れている）。
 
-トリガー：`schedule`（cron による定期フルスキャン）＋ `workflow_dispatch`（手動、スコープパラメータ付き）。
+トリガー：reusable workflow が宣言するのは `on: workflow_call` のみであり、トリガーは呼び出し元の workflow が決める——通常は `schedule`（cron による定期フルスキャン）と `workflow_dispatch`（手動実行）の組み合わせである。この workflow にスコープ用の input はなく、実行は常にフルスキャンとなる。
 > 「重複ファイル / 孤立ファイル / グローバル up-to-date」はグローバルな視点が必要であり、PR 差分では対応できないため、フルスキャンを主とする。
 
 単一 run のデータフロー：
 
 ```
-トリガー (schedule / workflow_dispatch)
+Caller's trigger (schedule / workflow_dispatch)
   │
   ▼
-[1] Discovery（確定的処理、LLM なし）
-    repo をスキャン → ファイルリスト + モーダル分類(code/doc/spec/visual/flow/icon...)
-    規約ソースを読み込む：CLAUDE.md、.claude/skills、.claude/workflows、
-                .github/workflows、.claude/audit.yml(存在する場合)
+[1] Discovery (deterministic, non-LLM heavy lifting)
+    Scan repo → file inventory + modality classification (code/doc/spec/visual/flow/icon...)
+    Read convention sources: CLAUDE.md, .claude/skills, .claude/workflows,
+                .github/workflows, .claude/audit.yml (if present)
   │
   ▼
-[2] Review（matrix：有効化された各 reviewer に 1 つの claude-code-action ステップ）
-    GHA matrix でネイティブ並列実行・障害隔離；唯一の LLM コスト集中箇所
-    各ステップの入力：inventory + 担当ファイルサブセット + 合成 rubric（組み込みデフォルト ⊕ repo 規約）
-    各自 findings/<reviewer>.json を出力（スキーマは §4 参照）
+[2] Review (matrix: one claude-code-action step per enabled reviewer)
+    GHA matrix gives native parallelism + fault isolation; the only concentrated LLM cost
+    Each step carries: inventory + its file subset + composed rubric (built-in default ⊕ repo conventions)
+    Each emits findings/<reviewer>.json (schema in §4)
   │
   ▼
-[3] Synthesis（単一の claude-code-action、唯一の「統合」を担う脳）
-    全 findings/*.json + inventory を読み込む（簡潔な構造化素材、repo 全体の再読み込みなし）
-    → セマンティックレベルでの横断的な関連付け、重複排除、システム的なテーマ、優先度のナレーティブ
+[3] Synthesis (single claude-code-action, the only "connect-the-dots" brain)
+    Reads all findings/*.json + inventory (compact structured material, no re-reading the whole repo)
+    → semantic cross-reviewer correlation, dedup, systemic themes, prioritized narrative
     → synthesis.json
   │
   ▼
-[4] Consolidate（確定的処理）
-    findings と synthesis を機械的にマージ、キーの重複排除、ソート（severity × confidence）
+[4] Consolidate (deterministic)
+    Mechanically merge findings + synthesis, dedup by key, sort (severity × confidence)
   │
   ▼
-[5] Report（確定的処理、LLM コストゼロ）
-    ├─ セルフコンテインドな単一ファイル HTML レポートを生成 → アーティファクトとしてアップロード
-    └─ トラッキング issue を作成/更新（markdown サマリー + HTML アーティファクトへのリンク）
+[5] Report (deterministic, zero LLM cost)
+    ├─ Produce a self-contained single-file HTML report → upload artifact
+    └─ Create/update tracking issue (markdown summary + link to HTML artifact)
 ```
 
 要点：
@@ -76,7 +75,7 @@
 
 ### Marketplace Composite Action
 
-3 つ目の統合パスとして、同じエンジンをリポジトリルートの composite action（`action.yml`）としてパッケージ化し、おなじみの `- uses: wei18/upkeep@v2` step 構文と [GitHub Marketplace](https://github.com/marketplace) への掲載を可能にする。composite action は `strategy.matrix` を使えない単一 job であるため、その `discovery` → `reviewer`（×7）→ `synthesis` → `report` の各ステップは並列ではなく順番に実行される——エンジンと入力は同じだが、有効な reviewer が多いリポジトリでは実行が遅くなる。上記の reusable workflow が主要なパスであり続ける理由は `docs/why-reusable-workflow.md` を参照。ここでの配布も skill と同様にあくまでパッケージングであり、`action.yml` は reusable workflow が使うのと同じ `.github/actions/<x>@v2` サブアクションを呼び出している。
+3 つ目の統合パスとして、同じエンジンをリポジトリルートの composite action（`action.yml`）としてパッケージ化し、おなじみの `- uses: wei18/upkeep@v2` step 構文と [GitHub Marketplace](https://github.com/marketplace) への掲載を可能にする。composite action は `strategy.matrix` を使えない単一 job であるため、その `discovery` → `reviewer`（×7）→ `synthesis` → `report` の各ステップは並列ではなく順番に実行される——エンジンと入力は同じだが、有効な reviewer が多いリポジトリでは実行が遅くなる。上記の reusable workflow が主要なパスであり続ける理由は `docs/ja/why-reusable-workflow.md` を参照。ここでの配布も skill と同様にあくまでパッケージングであり、`action.yml` は reusable workflow が使うのと同じ `.github/actions/<x>@v2` サブアクションを呼び出している。
 
 ---
 
@@ -87,27 +86,27 @@
 | Reviewer | スコープ | 主な検出対象 | デフォルト |
 |---|---|---|---|
 | `docs_staleness` | README、ドキュメント、コメント、**多言語 README/doc バリアント** | 内容の陳腐化、コードとのドリフト、リンク切れ、**多言語版とベースの非同期** | on |
-| `code_hygiene` | ソースコード | デッドコード、未使用ファイル/関数、spec との不一致 | on |
+| `code_hygiene` | ソースコード | デッドコード、未使用ファイル/関数、spec との不一致、明らかなコードスメル | on |
 | `spec_flow` | spec、フローチャート、ステートマシン | フローと実装の不一致、spec の陳腐化 | on |
 | `visual_icon` | 画像、アイコン、デザインアセット | 未使用アセット、重複画像、サイズ/命名規約の違反 | on |
 | `duplicate_orphan` | リポジトリ全体 | 重複ファイル、孤立ファイル、参照されていないリソース | on |
 | `convention` | リポジトリ全体 | リポジトリ自身の skills/workflows/CLAUDE.md 規約違反 | on |
 | `i18n` | ローカライズ文字列、`.lproj` 等 | 翻訳欠落、未使用キー、ベースとの非同期 | **off** |
 
-第一版では**動的なカスタム reviewer は実装しない**。i18n は組み込み（デフォルト無効）として用意することで一般的なニーズをカバーする（YAGNI）。
+動的なカスタム reviewer はサポートしない（§11）。組み込みの `i18n` reviewer（デフォルト無効）が一般的なニーズをカバーする。
 
 ### Rubric の三層合成（優先度：低 → 高）
 
 ```
-組み込みデフォルト rubric（action 同梱、その専門領域で何を検出するかを定義）
-   ⊕ repo 規約の自動探索（CLAUDE.md / .claude/skills / .claude/workflows
-                         のうち、その領域に関連するもの）
-   ⊕ audit.yml での明示的指定（reviewers.<name>.rubric が指すリポジトリファイル）← 最高優先
+Built-in default rubric (shipped with the action; defines what this specialty looks for)
+   ⊕ repo-convention auto-discovery (the domain-relevant parts of
+                         CLAUDE.md / .claude/skills / .claude/workflows)
+   ⊕ audit.yml explicit override (the repo file pointed to by reviewers.<name>.rubric) ← highest priority
 ```
 
 リポジトリが独自の基準を持つ場合はそれを優先する。`convention` はほぼ全面的にリポジトリ自身の規約に依存し、`visual_icon` は組み込みデフォルト＋リポジトリのデザイン規約（存在する場合）に主に依存する。
 
-**Reviewer rubric の言語（`rubric_lang`）**：組み込み rubric はロケールごとに `reviewers/<locale>/`（例：`reviewers/en/`、`reviewers/zh-TW/`）に配置される。`rubric_lang` workflow input（デフォルト `en`）が、reviewer と synthesis が使用するセットを選択する。
+**Reviewer rubric の言語（`rubric_lang`）**：組み込み rubric はロケールごとに `reviewers/<locale>/` に配置され、`en` と `zh-TW` の 2 セットがある。`rubric_lang` workflow input（デフォルト `en`）が、reviewer と synthesis が使用するセットを選択する。それ以外の値を指定すると対応する prompt ファイルが存在しないため、すべての reviewer と synthesis ステップが失敗する。
 
 ### 2.1 多言語ドキュメント同期検出（multilingual doc-set）
 
@@ -118,7 +117,7 @@
 - **対応言語（最大 6）**：`en`（ベース）、`zh-TW`、`zh-CN`、`ja`、`ko`（6 番目は予約）。
 - **検出**：ベース（`docs/en/<name>.md`、README の場合はルートの `README.md`）を基準として、各 `docs/<locale>/<name>.md` に対して「遅延/欠落/陳腐化」を報告する。§3 の原則に従い、証拠を付与する（git 最新度：ベースが更新されたが当該言語の訳が追随していない）。「翻訳が更新すべき側である」と決めつけない。ただし、ベースの方が新しい場合は通常、翻訳が遅れている傾向にある。
 - **グルーピング**：reviewer は「`docs/<locale>/` サブディレクトリをまたいだ同名ファイル」でグループ化する（README についてはルートの `README.md` と `docs/<locale>/README.md` を同グループとして扱う）。
-- **Dogfood**：本リポジトリ自身の全ユーザードキュメント（README、overview、design、why-reusable-workflow、plans）は `docs/<locale>/` に多言語化されており、この機能の実際のテストサンプルとしても機能する（§10 参照）。
+- **Dogfood**：本リポジトリ自身の全ユーザードキュメント（README、overview、design、why-reusable-workflow）は `docs/<locale>/` に多言語化されており、この機能の実際のテストサンプルとしても機能する（§10 参照）。
 
 ---
 
@@ -131,34 +130,53 @@
 1. **乖離を検出し、断定しない**：「A は X、B は Y、不一致」と報告する。「B が古い」とは言わない。
 2. **証拠シグナルを付与する**：git の最終更新時刻 / コミットの最新度、参照回数、参照の方向性。
 3. **分級による裁定**：
-   - 証拠が強い場合（例：あるファイルが半年間未更新、関連コードが先週大幅に変更された）→ 提案内で方向を明示する（「README が古い、更新を推奨」）が、それでも `needs-confirmation` を付与する。
-   - 証拠が弱い場合 → 「ドリフト、方向は裁定待ち」とマークする。
-   - **いかなる状況でも自動修正はしない**（自動修正は第二フェーズに持ち越し）。
-4. **SSOT を宣言ファイルに依存しない**：方向は全て推論で決定し、宣言ファイル自体が古くなるリスクを避ける。固定ポリシーが真に必要なリポジトリのみ escape hatch で上書き可能（非推奨）。
+   - 証拠が強い場合（例：あるファイルが半年間未更新、関連コードが先週大幅に変更された）→ `ssot_direction` を `stale_a` または `stale_b` に設定し（§4）、提案内で方向を明示する（「README が古い、更新を推奨」）。それでも人による確認が必要である。
+   - 証拠が弱い場合 → `ssot_direction` を `uncertain` に設定し、方向の判断は人に委ねる旨を提案に記す。
+   - **いかなる状況でも自動修正はしない**（自動修正はスコープ外、§11 参照）。
+4. **SSOT を宣言ファイルに依存しない**：方向は全て推論で決定し、宣言ファイル自体が古くなるリスクを避ける。固定ポリシーを持つリポジトリは、上書き用の rubric（`reviewers.<name>.rubric`、§5）にそのポリシーを記述できる（任意であり、非推奨）。
 
 ---
 
 ## 4. findings スキーマ
 
-各 reviewer は各問題に対して以下を出力する：
+各 reviewer は `findings/<reviewer>.json` を 1 ファイル書き出し、問題ごとに 1 レコードを記録する：
 
-```jsonc
+```json
 {
-  "file": "path/to/file",          // 主体ファイル（複数ファイルにまたがる問題は主ファイルに記載、related で補足）
-  "related": ["path/..."],          // 関連ファイル（空でも可）
   "reviewer": "docs_staleness",
-  "category": "staleness | duplicate | orphan | convention | inconsistency | ...",
-  "problem": "人間が読める問題の説明",
-  "evidence": "裏付け証拠（git タイムスタンプ、参照関係、具体的な不一致箇所）",
-  "suggestion": "推奨修正方法（分級裁定により方向を含む場合あり）",
-  "severity": "high | medium | low",
-  "confidence": "high | medium | low",
-  "ssot_direction": "stale_a | stale_b | uncertain | n/a",
-  "status": "ok"                    // reviewer レベル：ok | failed
+  "status": "ok",
+  "findings": [
+    {
+      "file": "path/to/file",
+      "related": ["path/to/other-file"],
+      "reviewer": "docs_staleness",
+      "category": "staleness",
+      "problem": "...",
+      "evidence": "...",
+      "suggestion": "...",
+      "severity": "medium",
+      "confidence": "high",
+      "ssot_direction": "stale_a"
+    }
+  ]
 }
 ```
 
-各 reviewer ステップは `findings/<reviewer>.json` を 1 ファイル出力する：`{ reviewer, status: "ok"|"failed", findings: Finding[] }`（単一 reviewer が失敗した場合、`status:"failed"`・`findings:[]` となり、他には影響しない）。
+- `status`：`ok` または `failed`。失敗した reviewer は `status: "failed"` と `findings: []` を書き出し、他の reviewer には影響しない。
+- `file`：主となるファイル。複数ファイルにまたがる問題は主となるファイルに記録し、残りは `related` に列挙する。
+- `related`：関連するその他のファイル。空でもよい。比較の相手側となるファイルを先頭に置く。この順序が意味を持つのは `findings/<reviewer>.json` の中だけである：Consolidate は `related` をマージして並べ替えるため、統合後のレポートではこの順序は保持されない。
+- `category`：`staleness`、`duplicate`、`orphan`、`convention`、`inconsistency`、`i18n_sync`、`other` のいずれか。
+- `problem`：人間が読める問題の説明。
+- `evidence`：裏付けとなる証拠（git の時刻、参照関係、具体的な不一致箇所）。
+- `suggestion`：修正の提案。分級による裁定のもとで方向を示すことがある（§3）。
+- `severity`、`confidence`：それぞれ `low`、`medium`、`high` のいずれか。
+- `ssot_direction`：次の 4 つの値のいずれか。
+  - `stale_a`：`file` が古い側である。
+  - `stale_b`：`related` の先頭のファイルが古い側である。
+  - `uncertain`：両者は食い違っているが、どちらが古いかは証拠から判断できない。
+  - `n/a`：比較すべき 2 つの側がない問題である。
+
+`category`、`severity`、`confidence` の各値の判断基準は 1 か所、reviewer prompt（`reviewers/<locale>/_reviewer-prompt.md`）でのみ定義する。`src/findings.ts` が各ファイルを許容値に照らして検証し、検証に失敗したファイルは `failed` の結果に置き換えられる。
 
 **Consolidate の重複排除/ソート（確定的処理）**：`file` + `category` をキーとして reviewer をまたいだ重複をマージする——同キーの「代表 finding」= severity×confidence が最高のもの（同点の場合は reviewer の列挙順を安定した tiebreak として使用）。`reviewers[]` はそのキーを報告した全 reviewer の和集合、`related[]` は和集合を取る。ソートキー = severity 降順 → confidence 降順 → file 昇順。
 
@@ -166,21 +184,26 @@
 
 Synthesis ステップは全 `findings/*.json` + inventory を読み込み、`synthesis.json` を出力する。**findings の参照はファイルパスで行う（整数インデックスを使用しない——LLM に対してより安定的で人間にも読みやすい）**：
 
-```jsonc
+```json
 {
-  "themes": [                         // reviewer をまたいだシステム的なテーマ
+  "themes": [
     {
-      "title": "システム的な問題の簡潔な説明",
-      "narrative": "これらの finding が同一の根本原因を指している理由",
-      "related_files": ["path/a", "path/b"],  // このテーマが対象とするファイルパス
-      "priority": "high | medium | low"
+      "title": "...",
+      "narrative": "...",
+      "related_files": ["path/a", "path/b"],
+      "priority": "high"
     }
   ],
-  "semantic_duplicates": [[ "reviewer|file|category", "reviewer|file|category" ]], // 意味的に重複する finding キーのグループ
-  "executive_summary": "全体的な健全性を要約した一段落",
-  "status": "ok"                      // synthesis 失敗時 → レポートは raw findings のみ出力
+  "semantic_duplicates": [["reviewer|file|category", "reviewer|file|category"]],
+  "executive_summary": "...",
+  "status": "ok"
 }
 ```
+
+- `themes`：reviewer をまたぐ系統的なテーマ。`title` は系統的な問題の要約、`narrative` はそれらの finding が同じ根本原因を指す理由、`related_files` はテーマが対象とするファイルパス、`priority` は `low`、`medium`、`high` のいずれかである。
+- `semantic_duplicates`：同じ問題を指す finding キーのグループ。各キーの形式は `reviewer|file|category` である。Consolidate は各グループを 1 件の finding にマージする。
+- `executive_summary`：全体の健全性を 1 段落でまとめた要約。
+- `status`：`ok` または `failed`。synthesis が失敗した場合は `themes: []` を書き出す。
 
 レポートは raw findings と synthesis を両方使用する。synthesis が失敗または存在しない場合は raw findings のみの表示にフォールバックする（テーマ/エグゼクティブサマリーなし）。
 
@@ -191,78 +214,93 @@ Synthesis ステップは全 `findings/*.json` + inventory を読み込み、`sy
 `scan` と `ssot` は**設定に含めない**（自身が古くなるため）。代わりに自動推論する。
 
 ```yaml
-# .claude/audit.yml —— 全て任意；通常このファイルは不要
+# .claude/audit.yml
 version: 1
-ignore:                  # 任意: 監査全体から除外する glob パス（全 reviewer）
-  - "docs/*/plans/**"    # 例: 監査したくないアーカイブ済み設計記録
-reviewers:               # 「無効化/スコープ変更/i18n 有効化」するものだけ記述、それ以外はデフォルトのまま
+ignore:
+  - "docs/*/plans/**"
+reviewers:
   visual_icon: { enabled: false }
   i18n:        { enabled: true }
+  docs_staleness:
+    paths: ["README.md", "docs/**"]
+    rubric: "docs/audit-rubric.md"
 report:
-  issue_label: "audit"   # デフォルトが "audit" のため、変更する場合のみ記述
-  min_severity: "low"    # これ未満は issue に含まない（HTML 完全レポートには含まれる）
+  min_severity: "low"
 ```
 
-> 設定キーは `snake_case`（`issue_label`、`min_severity`）で示すが、`snake_case` と内部的な `camelCase`（`issueLabel`、`minSeverity`）の両方を受け付ける。
+すべてのキーは任意である：
+
+- `version`：設定スキーマのバージョン。現在は `1`。
+- `ignore`：glob パス。一致したファイルは inventory から除外され、どの reviewer にも見えなくなる。デフォルト：なし。
+- `reviewers.<name>.enabled`：reviewer の有効・無効を切り替える。デフォルト：`i18n` 以外はすべて有効。記載のない reviewer はデフォルトのままとなり、未知の名前は無視される。
+- `reviewers.<name>.paths`：glob パス。設定すると、その reviewer の target ファイルは、ファイル種別による既定の選択（§2 の表の「スコープ」列）に代わり、inventory 内で一致したファイルになる。
+- `reviewers.<name>.rubric`：rubric ファイルのリポジトリルートからの相対パス。reviewer はこれを最優先の rubric 層として読む（§2）。
+- `report.min_severity`：`low`、`medium`、`high` のいずれか。この値未満の finding は tracking issue に含めない。HTML レポートにはすべての finding が残る。デフォルト：`low`。camelCase 表記の `minSeverity` も受け付ける。
+
+Glob 構文：`*` は 1 つのパスセグメント内に一致し、`**` はセグメントをまたいで一致し、`?` は 1 文字に一致する。
+
+issue のラベルは設定キーではない。`issue_label` workflow input（デフォルト `audit`）で指定する。
 
 ### 自動推論（設定不要）
 
-- **スキャン範囲**：リポジトリの `.gitignore` に従う。binary / lockfile / ビルド成果物は自動スキップ。テキストファイルは組み込みで 100KB の上限を適用（§7 のモーダル分流参照）。
+- **スキャン範囲**：`git ls-files --cached --others --exclude-standard` が列挙するすべてのファイル（追跡済みと未追跡のファイル。`.gitignore` に従う）から、`ignore` の glob に一致するものを除いたもの。lockfile のファイルカテゴリは `other` となるため、リポジトリ全体を見る reviewer（`duplicate_orphan`、`convention`）だけが受け取る。100KB を超えるテキストファイルにはフラグが付くだけで、スキップはされない（§7）。
 - **SSOT 方向**：全て証拠による推論（§3）、宣言ファイルなし。
 
 ---
 
 ## 6. リポジトリの配置（確定）
 
-この action は `uses:` で参照できる形式で公開するため、独立したリポジトリとする。ローカルディレクトリは `/Users/zw/GitHub/Wei18/repo-audit-action/`（`git init` 済み）；**公開/パッケージ名は `Upkeep`**（`uses: wei18/upkeep@v2`）——ローカルフォルダ名と公開名が異なるのは意図的なものである。
+Upkeep は `uses:` で参照されるため、独立したリポジトリ `wei18/upkeep` に置く（`uses: wei18/upkeep@v2`）。
 
-想定される構造：
+構造：
 
 ```
-repo-audit-action/                   # ローカルディレクトリ（公開名 Upkeep）
-├── action.yml                        # composite action（Marketplace 掲載用）：`uses: wei18/upkeep@v2`、reviewer ステップは順番に実行
+upkeep/
+├── action.yml                        # composite action (Marketplace listing): `uses: wei18/upkeep@v2`, sequential reviewer steps
 ├── .github/
-│   ├── workflows/audit.yml          # 再利用可能 workflow（on: workflow_call）：jobs/matrix オーケストレーション
-│   └── actions/                     # composite サブ action（workflow の job が uses で参照、Upkeep コードを内包）
+│   ├── workflows/audit.yml          # reusable workflow (on: workflow_call): jobs/matrix orchestration
+│   └── actions/                     # composite sub-actions (used by the workflow's jobs; carry Upkeep's own code)
 │       ├── discovery/  reviewer/  synthesis/  report/
-├── .claude-plugin/marketplace.json  # plugin marketplace カタログ（plugin 名：upkeep、source：./skills/upkeep-audit）
-├── README.md                        # 英語ベース使用例（job レベルの uses: 例、secret/権限）＋言語切替リスト
+├── .claude-plugin/marketplace.json  # plugin marketplace catalog (plugin name: upkeep, source: ./skills/upkeep-audit)
+├── README.md                        # English base usage (job-level uses: example, secret/permissions) + language switcher
 ├── docs/
-│   ├── en/      README なし（ルートが en）；overview.md  design.md  why-reusable-workflow.md  plans/
-│   ├── zh-TW/   README.md  overview.md  design.md  why-reusable-workflow.md  plans/
-│   ├── zh-CN/ … ja/ … ko/   （同様に各言語一式）
-│   └── （多言語ユーザードキュメントは全て docs/<locale>/；root README.md は en ベース）
-├── reviewers/<locale>/              # 7 名の組み込み rubric + _reviewer-prompt + _synthesis-prompt、ロケールごと（en、zh-TW）；rubric_lang で選択
-├── skills/upkeep-audit/             # Claude Code skill：ローカル実行の薄いラッパー（~/.cache/upkeep に clone）
-│   └── .claude-plugin/plugin.json   # plugin manifest（single-skill レイアウト；SKILL.md は plugin ルート直下）
-├── scripts/local-audit.sh           # ローカル pipeline オーケストレーター（CI と同じフロー；中間生成物は一時ディレクトリ）
-├── src/                             # discovery/consolidate/report/matrix/prompt-bundle 等の確定的 TS
-└── test/                            # ユニット + コントラクト + e2e（サンプルは §10 参照）
+│   ├── en/      overview.md  design.md  why-reusable-workflow.md   (no README: the root README.md is the en base)
+│   ├── zh-TW/   README.md  overview.md  design.md  why-reusable-workflow.md
+│   ├── zh-CN/ … ja/ … ko/   (same set as zh-TW)
+│   ├── archive/plans/               # original implementation plans: historical record, not localized
+│   └── superpowers/                 # design-process specs and plans: historical record, not localized
+├── reviewers/<locale>/              # 7 built-in rubrics + _reviewer-prompt + _synthesis-prompt, per locale (en, zh-TW); picked by rubric_lang
+├── skills/upkeep-audit/             # Claude Code skill: thin local-run wrapper (clones to ~/.cache/upkeep)
+│   └── .claude-plugin/plugin.json   # plugin manifest (single-skill layout; SKILL.md at plugin root)
+├── scripts/local-audit.sh           # local pipeline orchestrator (same flow as CI; temp-dir intermediates)
+├── src/                             # deterministic TS: discovery/consolidate/report/matrix/prompt-bundle, etc.
+└── test/                            # unit + contract tests (§10)
 ```
 
-> アーカイブに関する注記：`docs/<locale>/plans/` ツリーは、元の段階的な実装計画を意図的に**アーカイブ**したものです（ロケールごとに 1 セット）。どのナビゲーション索引からも意図的にリンクされておらず、その fenced ブロック（コードおよび埋め込みのドキュメントテンプレート）は zh-TW ソースから**逐語的に**保持されています——したがって、これらのファイルの空の `referencedBy` や fence 内の非英語テキストは想定どおりであり、ドリフトではありません。
+> アーカイブに関する注記：`docs/archive/plans/` と `docs/superpowers/` は、Upkeep の構築過程を残した履歴記録である。多言語化されず、どのナビゲーション索引からもリンクされず、現行のルールでもない——現行のルールは本 spec である。`.claude/audit.yml` は、この 2 つの `plans/` ディレクトリを自己監査から除外している。
 
 > サブ action の仕組み：再利用可能 workflow の job は**呼び出し元**の checkout 上で実行される。Upkeep 自身のコード（src/、reviewers/）は `uses: wei18/upkeep/.github/actions/<x>@v2` によって取り込まれる（GitHub が自動的に Upkeep リポジトリを取得）。各 reviewer は独立した matrix job で plain の `claude-code-action` プロンプトを実行する（`findings/<reviewer>.json` を書き込む）。**run 内でのサブエージェント spawn は不要**なため、`--agents`/`Agent` パススルーのリスクは発生しない。
 
 ---
 
-## 7. モーダル分流（「一律バイト上限」の代替）
+## 7. モーダル分流
 
-100KB 上限は「LLM にテキストとして渡すファイル」にのみ適用すべきであり、画像には適用しない。
+Discovery はすべてのファイルに `modality` を 1 つ割り当てる。100KB 上限は reviewer がテキストとして読むファイルにのみ適用し、画像には適用しない。
 
-| ファイル種別 | 処理方法 | 100KB バイト上限 |
+| `modality` | 対象 | reviewer の扱い |
 |---|---|---|
-| テキスト系（code/doc/spec/`.md`） | テキストとして読み込む。上限超過時は**チャンク分割、または先に要約してから詳細読み込みを指示**（サイレントに破棄しない） | 適用（超過時→チャンク分割） |
-| ベクター/テキスト形式のフローチャート（`.svg`/`.mmd`/`.dot`/`.puml`） | **ソースコードテキスト**として読み込む（セマンティック diff 可能） | 適用（通常は非常に小さい） |
-| ラスター画像（png/jpg/webp…） | バイトサイズは無関係；**サイズ/メガピクセル予算**で管理、vision に送る前に downscale | **適用しない** |
+| `raster_image` | `.png`、`.jpg`、`.jpeg`、`.gif`、`.webp`、`.bmp`、`.tiff`、`.heic`、`.ico`、`.icns` | バイト上限なし。メタデータで判断し、下記の唯一のケースでのみ画像として開く |
+| `vector_diagram` | `.svg`、`.mmd`、`.dot`、`.puml`、`.plantuml` | **ソースコードテキスト**として読み込む（セマンティック diff 可能）。100KB を超えると inventory が `oversizedText: true` を設定する |
+| `binary` | 先頭 8000 バイト内に NUL バイトを含むその他のファイル | メタデータ（`hash`、`sizeBytes`、`referencedBy`）のみで判断する |
+| `text` | 残りのすべてのファイル | テキストとして読み込む。100KB を超えると inventory が `oversizedText: true` を設定する |
 
-重要：visual reviewer の作業の大部分は実際に「画像を見る」必要がない——
-- 重複画像 → ファイルハッシュ（完全一致/知覚的ハッシュ）
+`oversizedText` は inventory 内のフラグにすぎない：サイズを理由にファイルが切り詰め・チャンク分割・要約・破棄されることはない。reviewer prompt は、フラグの付いたファイルを分割して読むよう reviewer に指示する。
+
+visual reviewer の作業の大部分は実際に「画像を見る」必要がない：
+- 重複画像 → ファイルハッシュ（完全一致）
 - 孤立画像 → 参照関係グラフ
 - 命名/サイズ規約 → メタデータ
-- **「画像の内容がデザイン/spec と一致するか」の判断のみ vision を使用（downscale 後）**
-
-スキップされる唯一のケースは処理不能な超大型の不明バイナリであり、レポートに `未検査：超大型バイナリ` と明記する（サイレントに無視しない）。
+- **「画像の内容がデザイン/spec と一致するか」の判断のみ画像を開く必要がある**。rubric はこれを少数の疑わしいアセットに限定している
 
 ---
 
@@ -270,11 +308,10 @@ repo-audit-action/                   # ローカルディレクトリ（公開�
 
 | 障害シナリオ | 対処方法 |
 |---|---|
-| ある reviewer の matrix ステップがクラッシュ/タイムアウト | そのステップは `status:"failed"`・`findings:[]` を出力（matrix の `fail-fast: false`）；他のステップは通常通り続行；レポートと issue に「今回 X は欠落」と明記 |
-| Anthropic API の一時的エラー | そのステップをリトライ（指数バックオフ、最大 2 回）；それでも失敗した場合にフォールバック |
+| ある reviewer がクラッシュ・タイムアウトする、または不正な出力を書き出す | その reviewer の結果は `status:"failed"`・`findings:[]` になる（matrix の `fail-fast: false`）；他の reviewer は通常通り続行；レポートと issue は「不完全な実行」の警告で失敗した reviewer を明記する |
 | Synthesis ステップの失敗 | フォールバック：レポートは raw findings のみ表示（横断的テーマ/ナレーティブなし）、run 全体を失敗にしない |
-| 全 reviewer が失敗 | workflow を fail とし、空の issue は作成しない |
-| Discovery でファイルが 0 件 | 正常終了、ログを残す、エラーではない |
+| 全 reviewer が失敗 | run は完了する：レポートと issue は finding なしで生成され、「不完全な実行」の警告がすべての reviewer を列挙する |
+| Discovery でファイルが 0 件 | 正常終了、エラーではない |
 
 原則：Review/Synthesis フェーズのサブ障害は全て隔離してフォールバック；確定的骨格（Discovery/Consolidate/Report）の障害が run 全体を失敗とする。
 
@@ -282,8 +319,9 @@ repo-audit-action/                   # ローカルディレクトリ（公開�
 
 ## 9. コスト管理
 
-- 100KB/ファイル上限 + binary/lockfile/ビルド成果物のスキップ（§5、§7）
-- **段階的送信**：まずリストとサマリーを送り、reviewer が詳細読み込みを指定する方式とし、無差別な全文送信はしない
+- reviewer が受け取るのは inventory（メタデータ）と target ファイルのリストであり、ファイルの内容ではない。prompt は、メタデータで疑わしいファイルを絞り込み、それらだけを詳細に読むよう指示する
+- `max_turns`（デフォルト 30）が、各 reviewer 呼び出しと synthesis 呼び出しの turn 数を制限する
+- `.gitignore` または `ignore` で除外されたファイルは inventory に入らない（§5）
 - HTML / issue の組み立ては純テキスト処理であり、**LLM コストはゼロ**
 
 ---
@@ -296,13 +334,14 @@ repo-audit-action/                   # ローカルディレクトリ（公開�
 - **LLM 層 → コントラクトテスト**：サブエージェントの出力が **findings スキーマに準拠していること**を検証する（フィールドの網羅性、severity/confidence/ssot_direction が合法な値域内にあること）。内容を逐一アサートしない。
   - CI：**録音済みのフェイクレスポンス**を使用してスキーマコントラクトテストを実施（コスト節約・安定性向上）。
   - 実際の API への接続：手動 / リリース前スモークテストのみ。
-- **エンドツーエンドスモーク**：Sudoku リポジトリに対してアクション全体を実行し、HTML/issue の存在、findings のスキーマ準拠、妥当な数量の問題検出をアサートする（逐一アサートしない）。
+- **エンドツーエンドスモーク（手動、CI には含まれない）**：Sudoku リポジトリに対して workflow 全体を実行し、HTML artifact と issue の存在、findings のスキーマ準拠、妥当な数量の問題検出を確認する（逐一アサートしない）。
+- **Dogfood**：`.github/workflows/self-audit.yml` が本リポジトリに対して毎週監査を実行する。
 
 ---
 
-## 11. スコープ境界（第一版では実装しない）
+## 11. スコープ境界（対象外）
 
-- 自動修正 PR（README の自動更新、孤立ファイルの自動削除）——第二版に持ち越し
-- 動的なカスタム reviewer——i18n の組み込みで対応済み
-- PR 差分モード——フルスキャンを主とする
-- SSOT 宣言ファイル——純粋な推論方式に変更
+- 自動修正 PR（README の自動更新、孤立ファイルの自動削除）——計画なし。Upkeep は出力のみを行う
+- 動的なカスタム reviewer——reviewer の構成は固定。組み込み reviewer は `reviewers.<name>.paths` と `reviewers.<name>.rubric`（§5）で調整する
+- PR 差分モード——実行は常にフルスキャン
+- SSOT 宣言ファイル——方向は証拠から推論する

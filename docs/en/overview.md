@@ -35,9 +35,9 @@ A deterministic report step renders everything into a self-contained HTML file (
 | Reviewer | What it checks |
 |---|---|
 | `docs_staleness` | Documentation that has drifted from the code it describes; multilingual READMEs and translated docs that are out of sync with the base language version |
-| `code_hygiene` | Dead code paths, unused exports, permanently commented-out blocks |
+| `code_hygiene` | Dead code, unused files and functions, code that diverges from its spec, obvious code smells |
 | `spec_flow` | Specs, architecture diagrams, and flow charts whose content no longer matches the actual implementation |
-| `visual_icon` | Images and icons that are outdated, mismatched, or inconsistent with current UI or branding |
+| `visual_icon` | Unused or duplicate images and icons, naming or size convention violations, images that no longer match the design |
 | `duplicate_orphan` | Duplicate files (same or near-identical content under different names/paths) and orphaned assets that are committed but never referenced |
 | `convention` | Deviations from the repo's own declared conventions — CLAUDE.md rules, `.claude/skills` patterns, and workflow standards |
 | `i18n` | Consistency across locale/translation files (disabled by default; opt in via `.claude/audit.yml`) |

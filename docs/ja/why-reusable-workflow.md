@@ -4,7 +4,7 @@
 
 ```yaml
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v7
 ```
 
 Upkeep は **job** として、ワークフローファイルを指す形で使われます：
@@ -35,8 +35,8 @@ action には 2 種類あり、どちらもこのファンアウトを表現で�
 
 つまり composite action（`- uses: wei18/upkeep@v2`）も *可能* です——reviewer が逐次になる代償付きで。Upkeep は reviewer を並列かつ各自隔離に保つため、あえて再利用可能ワークフローの形を選びました。スケジュール監査なら遅い逐次パスでも許容できますが、私たちは並列性とクリーンな障害隔離を優先しました。
 
-v2.1 以降、リポジトリルートはまさにこのトレードオフを体現した `action.yml`（`- uses: wei18/upkeep@v2`）を提供しています——逐次実行と引き換えに GitHub Marketplace に掲載できる代替パスです。reviewer の並列性が重要な場合は、上記の再利用可能ワークフローが引き続き推奨される統合パスです。
+リポジトリルートはまさにこのトレードオフを体現した `action.yml`（`- uses: wei18/upkeep@v2`）を提供しています——逐次実行と引き換えに GitHub Marketplace に掲載できる代替パスです。reviewer の並列性が重要な場合は、上記の再利用可能ワークフローが引き続き推奨される統合パスです。
 
 ## 実際に手放すもの
 
-呼び出し側の構文だけです。`- uses: owner/action@ref` の代わりに `jobs.<id>.uses: owner/repo/.github/workflows/file.yml@ref` を使います。それ以外はすべて action と同じです：`with:` で inputs、`secrets:` で secrets、`@v1` でバージョン固定。
+呼び出し側の構文だけです。`- uses: owner/action@ref` の代わりに `jobs.<id>.uses: owner/repo/.github/workflows/file.yml@ref` を使います。それ以外はすべて action と同じです：`with:` で inputs、`secrets:` で secrets、`@v2` でバージョン固定。

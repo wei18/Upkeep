@@ -70,6 +70,9 @@ cd ~/.cache/upkeep && npm ci
 | `--rubric-lang` | `en` | `rubric_lang` |
 | `--max-turns` | `30` | `max_turns` |
 | `--out` | `./upkeep-report.html` | report artifact |
+| `--keep-work` | off | — |
+
+`--keep-work` keeps the temporary work directory (inventory, prompts, findings, synthesis) and prints its path.
 
 **Requirements:** a logged-in `claude` CLI (Pro/Max; no `setup-token` and no GitHub access needed), Node 20+, git.
 
@@ -122,7 +125,7 @@ Prefer the familiar `- uses:` step syntax, or want Upkeep to show up in the
 [GitHub Marketplace](https://github.com/marketplace)? Use the **Upkeep Audit**
 action instead — same engine, same inputs, but the reviewers run one after
 another instead of in parallel (see
-[`docs/why-reusable-workflow.md`](docs/en/why-reusable-workflow.md) for why
+[`docs/en/why-reusable-workflow.md`](docs/en/why-reusable-workflow.md) for why
 the reusable workflow above is the primary path):
 
 ```yaml
@@ -159,9 +162,9 @@ itself since a step action can't declare its own permissions.
 | Name | Default | Checks |
 |---|---|---|
 | `docs_staleness` | on | Docs that drifted from code; out-of-sync multilingual READMEs and translated docs |
-| `code_hygiene` | on | Dead code, unused exports, commented-out blocks left in permanently |
+| `code_hygiene` | on | Dead code, unused files and functions, code that diverges from its spec, obvious code smells |
 | `spec_flow` | on | Specs, diagrams, and flow charts that no longer match the implementation |
-| `visual_icon` | on | Outdated or mismatched images and icons |
+| `visual_icon` | on | Unused or duplicate images and icons, naming or size convention violations, images that no longer match the design |
 | `duplicate_orphan` | on | Duplicate files and orphaned/unreferenced assets |
 | `convention` | on | Violations of the repo's own conventions (CLAUDE.md, `.claude/skills`, workflows) |
 | `i18n` | **off** | Internationalization consistency across locale files |
@@ -171,7 +174,7 @@ itself since a step action can't declare its own permissions.
 There are two separate configuration surfaces, by design:
 
 - **Workflow inputs** (the caller's `with:` block above; locally, the equivalent script flags) control *how the engine runs*: `model`, `max_turns`, `issue_label`, `rubric_lang`.
-- **`.claude/audit.yml`** (committed in the audited repo) controls *what gets audited*: which reviewers are enabled, per-reviewer rubric overrides, and `report.minSeverity`. Reviewer enablement lives here — not as a workflow input — because it is a per-repo policy that should evolve with the repo.
+- **`.claude/audit.yml`** (committed in the audited repo) controls *what gets audited*: which reviewers are enabled, per-reviewer rubric overrides, and `report.min_severity`. Reviewer enablement lives here — not as a workflow input — because it is a per-repo policy that should evolve with the repo.
 
 Everything is optional. To turn on the off-by-default `i18n` reviewer, for example:
 
@@ -182,10 +185,10 @@ reviewers:
     enabled: true
 ```
 
-See [`docs/design.md`](docs/en/design.md) for the full schema and options.
+See [`docs/en/design.md`](docs/en/design.md) for the full schema and options.
 
 ## Docs
 
-- [`docs/overview.md`](docs/en/overview.md) — how the pipeline works
-- [`docs/design.md`](docs/en/design.md) — full design reference
-- [`docs/why-reusable-workflow.md`](docs/en/why-reusable-workflow.md) — why the CI layer is a reusable workflow, not a `- uses:` step action
+- [`docs/en/overview.md`](docs/en/overview.md) — how the pipeline works
+- [`docs/en/design.md`](docs/en/design.md) — full design reference
+- [`docs/en/why-reusable-workflow.md`](docs/en/why-reusable-workflow.md) — why the CI layer is a reusable workflow, not a `- uses:` step action

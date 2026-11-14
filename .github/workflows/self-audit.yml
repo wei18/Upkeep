@@ -1,8 +1,9 @@
 name: self-audit
 # Dogfood: Upkeep audits its own repo on a schedule.
 # This is the drift safety net — it exercises docs_staleness multilingual-sync
-# detection against our own docs/<locale>/ and reviewers/<locale>/ trees, so when
-# the English base and its translations diverge, the audit surfaces it as a finding.
+# detection against our own docs/<locale>/ tree, so when the English base and its
+# translations diverge, the audit surfaces it as a finding.
+# reviewers/en <-> reviewers/zh-TW parity is checked by test/locale-parity.test.ts, not here.
 on:
   schedule:
     - cron: '0 21 * * 0'   # 05:00 Asia/Taipei (UTC+8), staggered after Sudoku's 04:00

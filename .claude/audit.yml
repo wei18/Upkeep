@@ -1,5 +1,5 @@
 # Upkeep auditing itself (dogfood).
-# The docs/<locale>/plans/ tree is an archived design record (see design.md §6),
-# kept verbatim from the zh-TW source — exclude it from the audit entirely.
+# docs/archive/plans/ and docs/superpowers/plans/ are historical design records
+# (see docs/en/design.md §6) — exclude them from the audit entirely.
 ignore:
   - "docs/*/plans/**"

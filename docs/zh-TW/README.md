@@ -70,6 +70,9 @@ cd ~/.cache/upkeep && npm ci
 | `--rubric-lang` | `en` | `rubric_lang` |
 | `--max-turns` | `30` | `max_turns` |
 | `--out` | `./upkeep-report.html` | report artifact |
+| `--keep-work` | 關閉 | — |
+
+`--keep-work` 會保留暫存工作目錄（inventory、prompts、findings、synthesis）並印出它的路徑。
 
 **需求**：已登入的 `claude` CLI（Pro/Max 訂閱；不需要 `setup-token`，也不需要 GitHub 存取權）、Node 20+、git。
 
@@ -121,7 +124,7 @@ jobs:
 偏好熟悉的 `- uses:` step 語法，或想讓 Upkeep 出現在
 [GitHub Marketplace](https://github.com/marketplace)？改用 **Upkeep Audit**
 action——同一套引擎、同樣的輸入參數，但審查員會依序執行，而非並行（原因見
-[`docs/why-reusable-workflow.md`](why-reusable-workflow.md)，說明為何上方的
+[`docs/zh-TW/why-reusable-workflow.md`](why-reusable-workflow.md)，說明為何上方的
 reusable workflow 才是主要路徑）：
 
 ```yaml
@@ -158,9 +161,9 @@ jobs:
 | 名稱 | 預設 | 檢查項目 |
 |---|---|---|
 | `docs_staleness` | 開啟 | 已脫離程式碼的文件；未與基礎語言版本同步的多語言 README 與翻譯文件 |
-| `code_hygiene` | 開啟 | 死碼、未使用的 export、長期留存的 commented-out 區塊 |
+| `code_hygiene` | 開啟 | 死碼、未使用的檔案與函式、與 spec 不符的實作、明顯的壞味道 |
 | `spec_flow` | 開啟 | 不再符合實作的規格說明、架構圖與流程圖 |
-| `visual_icon` | 開啟 | 過時或不一致的圖片與圖示 |
+| `visual_icon` | 開啟 | 未使用或重複的圖片與圖示、命名或尺寸不符規範、內容已不符設計的圖片 |
 | `duplicate_orphan` | 開啟 | 重複檔案及已提交但從未被引用的孤立資源 |
 | `convention` | 開啟 | 違反 repo 自身慣例（CLAUDE.md、`.claude/skills`、workflow 定義） |
 | `i18n` | **關閉** | 各 locale 檔案之間的 i18n 一致性 |
@@ -170,7 +173,7 @@ jobs:
 設定刻意分為兩個獨立面向：
 
 - **Workflow 輸入參數**（上方呼叫端的 `with:` 區塊；本機則為對應的腳本參數）控制*引擎怎麼跑*：`model`、`max_turns`、`issue_label`、`rubric_lang`。
-- **`.claude/audit.yml`**（提交在被稽核的 repo 內）控制*要稽核什麼*：啟用哪些審查員、per-reviewer rubric 覆寫、`report.minSeverity`。審查員的開關放在這裡——而非 workflow 輸入參數——因為它是該 repo 自己、應隨 repo 演進的政策。
+- **`.claude/audit.yml`**（提交在被稽核的 repo 內）控制*要稽核什麼*：啟用哪些審查員、per-reviewer rubric 覆寫、`report.min_severity`。審查員的開關放在這裡——而非 workflow 輸入參數——因為它是該 repo 自己、應隨 repo 演進的政策。
 
 所有設定皆為選填。例如要啟用預設關閉的 `i18n` 審查員：
 
@@ -181,10 +184,10 @@ reviewers:
     enabled: true
 ```
 
-完整 schema 與選項說明見 [`docs/design.md`](design.md)。
+完整 schema 與選項說明見 [`docs/zh-TW/design.md`](design.md)。
 
 ## 文件
 
-- [`docs/overview.md`](overview.md) — pipeline 運作原理
-- [`docs/design.md`](design.md) — 完整設計參考
-- [`docs/why-reusable-workflow.md`](why-reusable-workflow.md) — 為何 CI 層是 reusable workflow 而非 `- uses:` step action
+- [`docs/zh-TW/overview.md`](overview.md) — pipeline 運作原理
+- [`docs/zh-TW/design.md`](design.md) — 完整設計參考
+- [`docs/zh-TW/why-reusable-workflow.md`](why-reusable-workflow.md) — 為何 CI 層是 reusable workflow 而非 `- uses:` step action

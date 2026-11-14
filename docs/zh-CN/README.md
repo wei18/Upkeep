@@ -70,6 +70,9 @@ cd ~/.cache/upkeep && npm ci
 | `--rubric-lang` | `en` | `rubric_lang` |
 | `--max-turns` | `30` | `max_turns` |
 | `--out` | `./upkeep-report.html` | report artifact |
+| `--keep-work` | 关闭 | — |
+
+`--keep-work` 会保留临时工作目录（inventory、prompts、findings、synthesis）并打印它的路径。
 
 **要求**：已登录的 `claude` CLI（Pro/Max 订阅；不需要 `setup-token`，也不需要 GitHub 访问权限）、Node 20+、git。
 
@@ -121,7 +124,7 @@ jobs:
 偏好熟悉的 `- uses:` step 语法，或想让 Upkeep 出现在
 [GitHub Marketplace](https://github.com/marketplace)？改用 **Upkeep Audit**
 action——同一套引擎、同样的输入参数，但审查器会依次执行，而非并行执行（原因见
-[`docs/why-reusable-workflow.md`](why-reusable-workflow.md)，说明为何上面的
+[`docs/zh-CN/why-reusable-workflow.md`](why-reusable-workflow.md)，说明为何上面的
 reusable workflow 才是主要路径）：
 
 ```yaml
@@ -158,9 +161,9 @@ step action 无法自行声明权限。
 | 名称 | 默认状态 | 检查内容 |
 |---|---|---|
 | `docs_staleness` | 启用 | 脱离代码的文档；与英文原版不同步的多语言 README 及翻译文档 |
-| `code_hygiene` | 启用 | 死代码、未使用的导出、永久残留的注释代码块 |
+| `code_hygiene` | 启用 | 死代码、未使用的文件与函数、与 spec 不符的实现、明显的坏味道 |
 | `spec_flow` | 启用 | 不再符合实现的规范、架构图和流程图 |
-| `visual_icon` | 启用 | 过时或不匹配的图片与图标 |
+| `visual_icon` | 启用 | 未使用或重复的图片与图标、命名或尺寸不符规范、内容已不符设计的图片 |
 | `duplicate_orphan` | 启用 | 重复文件及已提交但从未被引用的孤立资源 |
 | `convention` | 启用 | 违反仓库自身约定（CLAUDE.md、`.claude/skills`、workflow 定义） |
 | `i18n` | **禁用** | 各语言文件间的国际化一致性 |
@@ -170,7 +173,7 @@ step action 无法自行声明权限。
 配置刻意分为两个独立的层面：
 
 - **Workflow 输入参数**（上方调用端的 `with:` 块；本地则为对应的脚本参数）控制*引擎如何运行*：`model`、`max_turns`、`issue_label`、`rubric_lang`。
-- **`.claude/audit.yml`**（提交在被审计的 repo 内）控制*审计什么*：启用哪些审查器、per-reviewer rubric 覆写、`report.minSeverity`。审查器的开关放在这里——而非 workflow 输入参数——因为它是该 repo 自身、应随 repo 演进的策略。
+- **`.claude/audit.yml`**（提交在被审计的 repo 内）控制*审计什么*：启用哪些审查器、per-reviewer rubric 覆写、`report.min_severity`。审查器的开关放在这里——而非 workflow 输入参数——因为它是该 repo 自身、应随 repo 演进的策略。
 
 所有配置均为可选项。例如要启用默认关闭的 `i18n` 审查器：
 
@@ -181,10 +184,10 @@ reviewers:
     enabled: true
 ```
 
-完整 schema 及选项说明见 [`docs/design.md`](design.md)。
+完整 schema 及选项说明见 [`docs/zh-CN/design.md`](design.md)。
 
 ## 文档
 
-- [`docs/overview.md`](overview.md) — 流水线工作原理
-- [`docs/design.md`](design.md) — 完整设计参考
-- [`docs/why-reusable-workflow.md`](why-reusable-workflow.md) — 为何 CI 层是 reusable workflow 而非 `- uses:` step action
+- [`docs/zh-CN/overview.md`](overview.md) — 流水线工作原理
+- [`docs/zh-CN/design.md`](design.md) — 完整设计参考
+- [`docs/zh-CN/why-reusable-workflow.md`](why-reusable-workflow.md) — 为何 CI 层是 reusable workflow 而非 `- uses:` step action
