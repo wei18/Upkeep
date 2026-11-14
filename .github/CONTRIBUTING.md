@@ -14,8 +14,8 @@ npm run build  # tsc — run this too; vitest does not type-check
 
 - **The spec is the SSOT (for contributors).** `docs/en/design.md` is authoritative for *how we develop*: keep code and spec in sync — this tool exists to catch drift, so the spec must not drift. This is a contribution-workflow rule and does not contradict the auditor's runtime invariant of **no presumed ground truth** (CLAUDE.md): when Upkeep audits a repo it reports divergence with evidence rather than assuming code or docs are correct. SSOT governs what we commit; "no presumed ground truth" governs what the auditor asserts.
 - **Docs are multilingual and stay in lockstep.** User docs live under `docs/<locale>/` (en, zh-TW, zh-CN, ja, ko). A change to one locale's README/overview/design/why-reusable-workflow must be propagated to all five.
-- **Reviewer rubrics** live under `reviewers/<locale>/`, selected by the `rubric_lang` input.
-- **Working specs/plans** live under `docs/superpowers/` (en-only design-process artifacts; intentionally outside the locale lockstep and unlinked from user-facing navigation).
+- **Reviewer rubrics** live under `reviewers/<locale>/` (en, zh-TW), selected by the `rubric_lang` input. A change to one locale must land in the other, line for line; `test/locale-parity.test.ts` checks it.
+- **Working specs/plans** live under `docs/superpowers/` (design-process artifacts; intentionally outside the locale lockstep and unlinked from user-facing navigation). Once implemented they are historical records, like `docs/archive/plans/`.
 - **TDD** — write a failing test first, and cover known edge cases (especially for any heuristic).
 - **Conventional commits** (`feat:`, `fix:`, `docs:`, `chore:`, `test:`, `refactor:`).
 

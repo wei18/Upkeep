@@ -17,7 +17,7 @@ inputs:
     description: Passed to claude-code-action so it skips the Claude GitHub App requirement
     required: true
   rubric_lang:
-    description: reviewer rubric / prompt language (en | zh-TW | ...)
+    description: reviewer rubric / prompt language (en or zh-TW)
     default: en
 runs:
   using: composite

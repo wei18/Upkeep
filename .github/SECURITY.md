@@ -20,4 +20,5 @@ Use GitHub's private vulnerability reporting: the repo's **Security** tab → **
 
 - Upkeep is **output-only** — it reads your repo and writes a report; it never edits or deletes files.
 - The only secret it needs is `CLAUDE_CODE_OAUTH_TOKEN`. Store it as a repo/environment secret and never commit it; secret-scanning push protection is enabled on this repo.
-- Reviewers run as isolated matrix jobs via the official `claude-code-action`; findings are written as structured JSON and consolidated deterministically.
+- Every reviewer runs with four tools only: `Read`, `Write`, `Glob`, `Grep`. In CI it runs through the official `claude-code-action`: as an isolated matrix job in the reusable workflow, or as one of the sequential steps of the Marketplace action. Local runs use `claude -p` subprocesses with the same tool list.
+- Findings are written as structured JSON and consolidated deterministically.

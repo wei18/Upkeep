@@ -70,6 +70,9 @@ cd ~/.cache/upkeep && npm ci
 | `--rubric-lang` | `en` | `rubric_lang` |
 | `--max-turns` | `30` | `max_turns` |
 | `--out` | `./upkeep-report.html` | report artifact |
+| `--keep-work` | 꺼짐 | — |
+
+`--keep-work`는 임시 작업 디렉터리(inventory, prompts, findings, synthesis)를 남기고 그 경로를 출력합니다.
 
 **요구 사항**: 로그인된 `claude` CLI (Pro/Max 구독; `setup-token`도 GitHub 접근 권한도 필요 없음), Node 20+, git.
 
@@ -122,7 +125,7 @@ jobs:
 [GitHub Marketplace](https://github.com/marketplace)에 노출하고 싶다면?
 대신 **Upkeep Audit** action을 사용하세요 — 동일한 엔진, 동일한 입력이지만
 리뷰어가 병렬이 아니라 차례로 실행됩니다(위 reusable workflow가 기본
-경로인 이유는 [`docs/why-reusable-workflow.md`](why-reusable-workflow.md)
+경로인 이유는 [`docs/ko/why-reusable-workflow.md`](why-reusable-workflow.md)
 참조):
 
 ```yaml
@@ -159,9 +162,9 @@ secret(`claude setup-token`으로 생성)과 `permissions` 블록. step action�
 | 이름 | 기본값 | 검사 항목 |
 |---|---|---|
 | `docs_staleness` | 활성 | 코드와 어긋난 문서; 동기화가 깨진 다국어 README 및 번역 문서 |
-| `code_hygiene` | 활성 | 데드 코드, 미사용 export, 영구적으로 남겨진 주석 처리 블록 |
+| `code_hygiene` | 활성 | 데드 코드, 미사용 파일 및 함수, 스펙과 어긋난 구현, 명백한 코드 스멜 |
 | `spec_flow` | 활성 | 구현과 더 이상 일치하지 않는 명세, 다이어그램, 플로우차트 |
-| `visual_icon` | 활성 | 오래되었거나 불일치하는 이미지 및 아이콘 |
+| `visual_icon` | 활성 | 미사용 또는 중복 이미지 및 아이콘, 명명·크기 규범 위반, 디자인과 더 이상 일치하지 않는 이미지 |
 | `duplicate_orphan` | 활성 | 중복 파일 및 커밋은 되어 있지만 참조되지 않는 고아 에셋 |
 | `convention` | 활성 | 저장소 자체 컨벤션 위반 (CLAUDE.md, `.claude/skills`, workflow) |
 | `i18n` | **비활성** | 로케일 파일 간 국제화 일관성 |
@@ -171,7 +174,7 @@ secret(`claude setup-token`으로 생성)과 `permissions` 블록. step action�
 설정은 의도적으로 두 개의 독립된 영역으로 나뉩니다:
 
 - **Workflow 입력**(위 caller의 `with:` 블록; 로컬에서는 이에 대응하는 스크립트 플래그)은 *엔진을 어떻게 실행할지*를 제어합니다: `model`, `max_turns`, `issue_label`, `rubric_lang`.
-- **`.claude/audit.yml`**(감사 대상 repo에 커밋)은 *무엇을 감사할지*를 제어합니다: 어떤 리뷰어를 활성화할지, per-reviewer rubric 재정의, `report.minSeverity`. 리뷰어 활성화 여부는 workflow 입력이 아니라 여기에 있습니다 — repo마다 정해지고 repo와 함께 진화해야 하는 정책이기 때문입니다.
+- **`.claude/audit.yml`**(감사 대상 repo에 커밋)은 *무엇을 감사할지*를 제어합니다: 어떤 리뷰어를 활성화할지, per-reviewer rubric 재정의, `report.min_severity`. 리뷰어 활성화 여부는 workflow 입력이 아니라 여기에 있습니다 — repo마다 정해지고 repo와 함께 진화해야 하는 정책이기 때문입니다.
 
 모든 설정은 선택 사항입니다. 예를 들어 기본적으로 꺼져 있는 `i18n` 리뷰어를 켜려면:
 
@@ -182,10 +185,10 @@ reviewers:
     enabled: true
 ```
 
-전체 스키마와 옵션은 [`docs/design.md`](design.md)를 참고하세요.
+전체 스키마와 옵션은 [`docs/ko/design.md`](design.md)를 참고하세요.
 
 ## 문서
 
-- [`docs/overview.md`](overview.md) — 파이프라인 동작 방식
-- [`docs/design.md`](design.md) — 전체 설계 참고 문서
-- [`docs/why-reusable-workflow.md`](why-reusable-workflow.md) — 왜 CI 계층은 step 액션이 아니라 reusable workflow인가
+- [`docs/ko/overview.md`](overview.md) — 파이프라인 동작 방식
+- [`docs/ko/design.md`](design.md) — 전체 설계 참고 문서
+- [`docs/ko/why-reusable-workflow.md`](why-reusable-workflow.md) — 왜 CI 계층은 step 액션이 아니라 reusable workflow인가

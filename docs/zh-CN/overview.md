@@ -35,9 +35,9 @@ Upkeep 有三种共用同一引擎的集成形态：CI 用的可复用 `workflow
 | 审查器 | 检查内容 |
 |---|---|
 | `docs_staleness` | 脱离所描述代码的文档；与基准语言版本不同步的多语言 README 及翻译文档 |
-| `code_hygiene` | 死代码路径、未使用的导出、永久残留的注释代码块 |
+| `code_hygiene` | 死代码、未使用的文件与函数、与 spec 不符的实现、明显的坏味道 |
 | `spec_flow` | 内容不再符合实际实现的规范、架构图和流程图 |
-| `visual_icon` | 过时、不匹配或与当前 UI / 品牌不一致的图片和图标 |
+| `visual_icon` | 未使用或重复的图片与图标、命名或尺寸不符规范、内容已不符设计的图片 |
 | `duplicate_orphan` | 重复文件（不同路径或文件名下内容相同或高度相似）及已提交但从未被引用的孤立资源 |
 | `convention` | 偏离仓库自身声明约定的情况 — CLAUDE.md 规则、`.claude/skills` 模式、workflow 标准 |
 | `i18n` | 语言文件间的一致性（默认禁用；通过 `.claude/audit.yml` 启用） |

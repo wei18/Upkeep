@@ -70,6 +70,9 @@ cd ~/.cache/upkeep && npm ci
 | `--rubric-lang` | `en` | `rubric_lang` |
 | `--max-turns` | `30` | `max_turns` |
 | `--out` | `./upkeep-report.html` | report artifact |
+| `--keep-work` | オフ | — |
+
+`--keep-work` は一時作業ディレクトリ（inventory、prompts、findings、synthesis）を残し、そのパスを表示します。
 
 **要件**：ログイン済みの `claude` CLI（Pro/Max サブスクリプション。`setup-token` も GitHub アクセスも不要）、Node 20+、git。
 
@@ -123,7 +126,7 @@ jobs:
 **Upkeep Audit** action を代わりに使用してください——同じエンジン、同じ入力
 ですが、レビュアーは並列ではなく順番に実行されます（上記の reusable workflow
 が主要なパスである理由については
-[`docs/why-reusable-workflow.md`](why-reusable-workflow.md) を参照）：
+[`docs/ja/why-reusable-workflow.md`](why-reusable-workflow.md) を参照）：
 
 ```yaml
 name: repo audit
@@ -159,9 +162,9 @@ jobs:
 | 名前 | デフォルト | チェック内容 |
 |---|---|---|
 | `docs_staleness` | 有効 | コードから乖離したドキュメント、ベース言語と同期が取れていない多言語 README・翻訳ドキュメント |
-| `code_hygiene` | 有効 | デッドコード、未使用エクスポート、永続的にコメントアウトされたブロック |
+| `code_hygiene` | 有効 | デッドコード、未使用のファイルや関数、spec と食い違う実装、明らかなコードスメル |
 | `spec_flow` | 有効 | 実装と一致しなくなった仕様・ダイアグラム・フローチャート |
-| `visual_icon` | 有効 | 古くなった・不一致な画像やアイコン |
+| `visual_icon` | 有効 | 未使用または重複した画像やアイコン、命名・サイズ規約の違反、デザインと一致しなくなった画像 |
 | `duplicate_orphan` | 有効 | 重複ファイルおよび参照されていない孤立アセット |
 | `convention` | 有効 | リポジトリ独自の規約違反（CLAUDE.md、`.claude/skills`、workflow） |
 | `i18n` | **無効** | ロケールファイル間の国際化の整合性 |
@@ -171,7 +174,7 @@ jobs:
 設定は意図的に 2 つの独立した面に分かれています:
 
 - **Workflow 入力**（上記の呼び出し元の `with:` ブロック。ローカルでは対応するスクリプトのフラグ）は*エンジンの動かし方*を制御します: `model`、`max_turns`、`issue_label`、`rubric_lang`。
-- **`.claude/audit.yml`**（監査対象の repo にコミット）は*何を監査するか*を制御します: どのレビュアーを有効にするか、per-reviewer の rubric 上書き、`report.minSeverity`。レビュアーの有効・無効はここに置かれます——workflow 入力ではなく——repo ごとに、repo とともに進化すべきポリシーだからです。
+- **`.claude/audit.yml`**（監査対象の repo にコミット）は*何を監査するか*を制御します: どのレビュアーを有効にするか、per-reviewer の rubric 上書き、`report.min_severity`。レビュアーの有効・無効はここに置かれます——workflow 入力ではなく——repo ごとに、repo とともに進化すべきポリシーだからです。
 
 設定はすべて任意です。たとえばデフォルトで無効な `i18n` レビュアーを有効にするには:
 
@@ -182,10 +185,10 @@ reviewers:
     enabled: true
 ```
 
-スキーマとオプションの詳細は [`docs/design.md`](design.md) を参照してください。
+スキーマとオプションの詳細は [`docs/ja/design.md`](design.md) を参照してください。
 
 ## ドキュメント
 
-- [`docs/overview.md`](overview.md) — パイプラインの動作説明
-- [`docs/design.md`](design.md) — 設計リファレンス（フル版）
-- [`docs/why-reusable-workflow.md`](why-reusable-workflow.md) — なぜ CI レイヤーが step アクションではなく reusable workflow なのか
+- [`docs/ja/overview.md`](overview.md) — パイプラインの動作説明
+- [`docs/ja/design.md`](design.md) — 設計リファレンス（フル版）
+- [`docs/ja/why-reusable-workflow.md`](why-reusable-workflow.md) — なぜ CI レイヤーが step アクションではなく reusable workflow なのか
