@@ -1,23 +1,25 @@
-# Plan 4b — Reusable workflow + composite 子 action + e2e Implementation Plan
+# Plan 4b — Reusable workflow + composite sub-action + e2e Implementation Plan
+
+> **Archived — historical record. Do not execute.** This plan has been implemented. Its tasks, file paths and version refs (such as `@v1` and `../design.md`) describe the repo as it was when the plan was written. Current behavior is specified in [`docs/en/design.md`](../../en/design.md).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 把 Plan 1-4a 的確定性層接成真正可跑的 GitHub Action：一個 reusable workflow（`on: workflow_call`）以 jobs+matrix 編排 discovery → review(matrix) → synthesis → report，每個 LLM 步驟用官方 `claude-code-action`，最後 upsert 一個 tracking issue 並上傳 HTML artifact；對 `wei18/Sudoku` 跑直播 e2e。
+**Goal:** Wire the deterministic layers from Plans 1-4a into a fully runnable GitHub Action: a reusable workflow (`on: workflow_call`) that uses jobs + matrix to orchestrate discovery → review(matrix) → synthesis → report, with each LLM step driven by the official `claude-code-action`, and finally upserts a tracking issue and uploads an HTML artifact; run a live e2e against `wei18/Sudoku`.
 
-**Architecture:** reusable workflow 編排 jobs；upkeep 自身程式碼透過 composite 子 action（`uses: wei18/upkeep/.github/actions/<x>`）帶入（`github.action_path` 定位、`npm ci` + `node --import tsx`）。新增一層**確定性 finalize**（驗證 LLM 輸出、缺/壞時退回 `status:"failed"`）保證下游永遠讀到合規 JSON——這層 CI-safe、TDD。YAML 由 structure-parse 測試守結構，正確性由手動 e2e 確認。
+**Architecture:** The reusable workflow orchestrates jobs; upkeep's own code is brought in through composite sub-actions (`uses: wei18/upkeep/.github/actions/<x>`) using `github.action_path` for location and `npm ci` + `node --import tsx`. A **deterministic finalize** layer (validates LLM output; falls back to `status:"failed"` on missing or invalid output) is added to guarantee downstream always reads compliant JSON — this layer is CI-safe and TDD. YAML structure is guarded by structure-parse tests; correctness is confirmed by manual e2e.
 
-**Tech Stack:** TypeScript/Node 20（沿用，含 `yaml` 依賴用於 structure 測試）；GitHub Actions（reusable workflow + composite actions）；`claude-code-action`；`gh` CLI。
+**Tech Stack:** TypeScript/Node 20 (carried over, including the `yaml` dependency for structure tests); GitHub Actions (reusable workflow + composite actions); `claude-code-action`; `gh` CLI.
 
-對應 spec：`../design.md` §1（matrix + sub-action 編排）、§8（失敗隔離/降級）、§4/§4.1（findings/synthesis 契約）、§10（e2e 樣本 wei18/Sudoku）。
+Corresponding spec: `../design.md` §1 (matrix + sub-action orchestration), §8 (failure isolation/degradation), §4/§4.1 (findings/synthesis contract), §10 (e2e sample wei18/Sudoku).
 
-### 前置（已驗證 ✓）
-- `claude-code-action` 支援 `prompt` 自主執行、`claude_args` 直傳 `--allowedTools/--max-turns/--model`、可讀寫 workspace 檔（Plan 4 前已查官方文件）。
-- composite action 可在 step `uses:` 其他 action（含第三方）；step 可用 `if: always()`。
-- reusable workflow 的 job 可用 `strategy.matrix`、`continue-on-error`、`needs`、`permissions`、artifacts、`gh`。
-- **未 live 驗證項（由本 plan Task 6 e2e 首次確認）**：upload/download-artifact v4 的單檔路徑結構、claude-code-action 在 matrix job 內依 prompt 寫出合規 `findings/<r>.json`、`github.action_path/../../..` 定位 upkeep root 正確。
+### Prerequisites (verified ✓)
+- `claude-code-action` supports autonomous `prompt` execution, passing `--allowedTools/--max-turns/--model` directly via `claude_args`, and can read/write workspace files (verified against official docs before Plan 4).
+- Composite actions can `uses:` other actions (including third-party) in a step; steps can use `if: always()`.
+- Reusable workflow jobs support `strategy.matrix`, `continue-on-error`, `needs`, `permissions`, artifacts, and `gh`.
+- **Items not yet live-verified (to be confirmed for the first time in Task 6 e2e):** single-file path structure of upload/download-artifact v4; whether claude-code-action writes a compliant `findings/<r>.json` per prompt inside a matrix job; whether `github.action_path/../../..` correctly locates the upkeep root.
 
-### 版本 ref 注意
-`uses:` 的 ref 不能用 `${{ }}` 插值，故 workflow 內各子 action 的 ref 必須是字面量。本 plan 一律寫 `@v1`；**dev/e2e 期間**改用分支名（見 Task 6）。release 時確保 workflow 與子 action 同 tag。
+### Version ref note
+`uses:` refs cannot be interpolated with `${{ }}`; therefore the ref for each sub-action inside the workflow must be a literal string. This plan uses `@v1` throughout; **during dev/e2e** switch to the branch name (see Task 6). On release, ensure the workflow and sub-actions share the same tag.
 
 ---
 
@@ -25,33 +27,33 @@
 
 ```
 src/
-  finalize.ts     # [新] finalizeReviewerOutput / finalizeSynthesis（驗證+退回 failed）+ CLI
-  find-issue.ts   # [新] CLI：讀 gh issue list JSON → 印出帶 ISSUE_MARKER 的 issue number（或空）
+  finalize.ts     # [new] finalizeReviewerOutput / finalizeSynthesis (validate + fallback to failed) + CLI
+  find-issue.ts   # [new] CLI: reads gh issue list JSON → prints issue number with ISSUE_MARKER (or empty)
 .github/
   actions/
-    discovery/action.yml   # [新] scan → inventory.json artifact + reviewers matrix 輸出
-    reviewer/action.yml    # [新] 一位 reviewer：prompt-bundle → claude-code-action → finalize → 上傳 findings-<r>
-    synthesis/action.yml   # [新] 讀全部 findings → claude-code-action → finalize → 上傳 synthesis
-    report/action.yml      # [新] consolidate+render → 上傳 report.html + gh issue upsert
+    discovery/action.yml   # [new] scan → inventory.json artifact + reviewers matrix output
+    reviewer/action.yml    # [new] one reviewer: prompt-bundle → claude-code-action → finalize → upload findings-<r>
+    synthesis/action.yml   # [new] reads all findings → claude-code-action → finalize → upload synthesis
+    report/action.yml      # [new] consolidate+render → upload report.html + gh issue upsert
   workflows/
-    audit.yml              # [新] on: workflow_call；jobs: discovery→review(matrix)→synthesis→report
+    audit.yml              # [new] on: workflow_call; jobs: discovery→review(matrix)→synthesis→report
 test/
-  finalize.test.ts         # [新]
-  workflow-structure.test.ts # [新] 解析 YAML 斷言結構（CI-safe）
-README.md                  # [改] job-level uses 用法
-docs/e2e.md                # [新] 對 wei18/Sudoku 的手動 e2e 程序
+  finalize.test.ts         # [new]
+  workflow-structure.test.ts # [new] parses YAML and asserts structure (CI-safe)
+README.md                  # [modified] job-level uses usage
+docs/e2e.md                # [new] manual e2e procedure against wei18/Sudoku
 ```
 
 ---
 
-### Task 0: 確定性 finalize 層 `src/finalize.ts` + `src/find-issue.ts`
+### Task 0: Deterministic finalize layer `src/finalize.ts` + `src/find-issue.ts`
 
 **Files:**
 - Create: `src/finalize.ts`, `src/find-issue.ts`, `test/finalize.test.ts`
 
-`finalizeReviewerOutput(raw, reviewer)`：raw 合規且 reviewer 相符 → 原樣；否則退回 `{reviewer, status:"failed", findings:[]}`。`finalizeSynthesis(raw)`：合規 → 原樣；否則 `{themes:[],semantic_duplicates:[],executive_summary:"",status:"failed"}`。CLI 就地讀檔→finalize→寫回（檔不存在當 null）。`find-issue.ts` 是 upsert 用的薄 CLI。
+`finalizeReviewerOutput(raw, reviewer)`: if raw is compliant and reviewer matches → pass through as-is; otherwise fall back to `{reviewer, status:"failed", findings:[]}`. `finalizeSynthesis(raw)`: if compliant → pass through as-is; otherwise `{themes:[],semantic_duplicates:[],executive_summary:"",status:"failed"}`. The CLI reads a file in place → finalizes → writes back (treats a missing file as null). `find-issue.ts` is a thin CLI for upsert.
 
-- [ ] **Step 1: 寫失敗測試**
+- [ ] **Step 1: Write failing tests**
 
 ```ts
 // test/finalize.test.ts
@@ -91,12 +93,12 @@ describe('finalizeSynthesis', () => {
 });
 ```
 
-- [ ] **Step 2: 跑測試確認失敗**
+- [ ] **Step 2: Run tests to confirm failure**
 
 Run: `npx vitest run test/finalize.test.ts`
-Expected: FAIL。
+Expected: FAIL.
 
-- [ ] **Step 3: 寫實作**
+- [ ] **Step 3: Write implementation**
 
 ```ts
 // src/finalize.ts
@@ -136,12 +138,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 ```
 
-- [ ] **Step 4: 跑測試確認通過**
+- [ ] **Step 4: Run tests to confirm pass**
 
 Run: `npx vitest run test/finalize.test.ts`
-Expected: PASS（6 tests）。
+Expected: PASS (6 tests).
 
-- [ ] **Step 5: 寫 `src/find-issue.ts`**
+- [ ] **Step 5: Write `src/find-issue.ts`**
 
 ```ts
 // src/find-issue.ts
@@ -159,12 +161,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 ```
 
-> `IssueRef` 需從 `src/issue.ts` export（Plan 4a 已 export interface IssueRef）。
+> `IssueRef` must be exported from `src/issue.ts` (Plan 4a already exports `interface IssueRef`).
 
-- [ ] **Step 6: 全套件 + 型別**
+- [ ] **Step 6: Full suite + types**
 
 Run: `npx vitest run && npx tsc --noEmit`
-Expected: 全 PASS、無型別錯誤。
+Expected: all PASS, no type errors.
 
 - [ ] **Step 7: Commit**
 
@@ -175,12 +177,12 @@ git commit -m "feat: finalize layer (validate+fallback) and find-issue CLI for u
 
 ---
 
-### Task 1: discovery + reviewer 子 action
+### Task 1: discovery + reviewer sub-actions
 
 **Files:**
 - Create: `.github/actions/discovery/action.yml`, `.github/actions/reviewer/action.yml`
 
-- [ ] **Step 1: 建 `.github/actions/discovery/action.yml`**
+- [ ] **Step 1: Create `.github/actions/discovery/action.yml`**
 
 ```yaml
 name: upkeep discovery
@@ -216,7 +218,7 @@ runs:
         path: ${{ runner.temp }}/inventory.json
 ```
 
-- [ ] **Step 2: 建 `.github/actions/reviewer/action.yml`**
+- [ ] **Step 2: Create `.github/actions/reviewer/action.yml`**
 
 ```yaml
 name: upkeep reviewer
@@ -279,7 +281,7 @@ runs:
         path: ${{ inputs.target }}/findings/${{ inputs.reviewer }}.json
 ```
 
-> 失敗隔離：`claude-code-action` 設 `continue-on-error: true`；`finalize`＋`upload` 設 `if: always()`，故即使 LLM step 失敗，仍會寫出 `status:"failed"` 的合規 findings 並上傳。workflow 的 review job 另設 `fail-fast: false`（見 Task 3）。
+> Failure isolation: `claude-code-action` is set to `continue-on-error: true`; `finalize` and `upload` are set to `if: always()`, so even if the LLM step fails, a compliant findings file with `status:"failed"` is still written and uploaded. The review job in the workflow also sets `fail-fast: false` (see Task 3).
 
 - [ ] **Step 3: Commit**
 
@@ -290,12 +292,12 @@ git commit -m "feat: discovery and reviewer composite sub-actions"
 
 ---
 
-### Task 2: synthesis + report 子 action
+### Task 2: synthesis + report sub-actions
 
 **Files:**
 - Create: `.github/actions/synthesis/action.yml`, `.github/actions/report/action.yml`
 
-- [ ] **Step 1: 建 `.github/actions/synthesis/action.yml`**
+- [ ] **Step 1: Create `.github/actions/synthesis/action.yml`**
 
 ```yaml
 name: upkeep synthesis
@@ -357,9 +359,9 @@ runs:
         path: ${{ inputs.target }}/synthesis.json
 ```
 
-> 上面 synthesis action 的 `build synthesis prompt` 步驟呼叫 `src/synthesis-prompt-cli.ts`（下一步建立）。兩者同次 commit。
+> The `build synthesis prompt` step in the synthesis action above calls `src/synthesis-prompt-cli.ts` (created in the next step). Both are committed together.
 
-- [ ] **Step 2: 新增薄 CLI `src/synthesis-prompt-cli.ts`**（讓 synthesis prompt 產出可靠、可被上面 YAML 呼叫）
+- [ ] **Step 2: Add thin CLI `src/synthesis-prompt-cli.ts`** (makes synthesis prompt generation reliable and callable from the YAML above)
 
 ```ts
 // src/synthesis-prompt-cli.ts
@@ -374,7 +376,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 ```
 
-- [ ] **Step 3: 建 `.github/actions/report/action.yml`**
+- [ ] **Step 3: Create `.github/actions/report/action.yml`**
 
 ```yaml
 name: upkeep report
@@ -445,12 +447,12 @@ git commit -m "feat: synthesis and report composite sub-actions"
 
 ---
 
-### Task 3: reusable workflow `.github/workflows/audit.yml` + structure 測試
+### Task 3: Reusable workflow `.github/workflows/audit.yml` + structure tests
 
 **Files:**
 - Create: `.github/workflows/audit.yml`, `test/workflow-structure.test.ts`
 
-- [ ] **Step 1: 寫 structure 測試（先失敗）**
+- [ ] **Step 1: Write structure tests (fail first)**
 
 ```ts
 // test/workflow-structure.test.ts
@@ -485,12 +487,12 @@ describe('audit reusable workflow structure', () => {
 });
 ```
 
-- [ ] **Step 2: 跑測試確認失敗**
+- [ ] **Step 2: Run tests to confirm failure**
 
 Run: `npx vitest run test/workflow-structure.test.ts`
-Expected: FAIL（檔不存在）。
+Expected: FAIL (file does not exist).
 
-- [ ] **Step 3: 建 `.github/workflows/audit.yml`**
+- [ ] **Step 3: Create `.github/workflows/audit.yml`**
 
 ```yaml
 name: upkeep audit
@@ -564,10 +566,10 @@ jobs:
           github_token: ${{ github.token }}
 ```
 
-- [ ] **Step 4: 跑測試確認通過**
+- [ ] **Step 4: Run tests to confirm pass**
 
 Run: `npx vitest run test/workflow-structure.test.ts`
-Expected: PASS（3 tests）。
+Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -578,19 +580,19 @@ git commit -m "feat: reusable audit workflow orchestrating discovery/review/synt
 
 ---
 
-### Task 4: README 用法 + 範例 caller
+### Task 4: README usage + example caller
 
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: 改 `README.md`**——把「狀態：設計階段」段落換成可用的 job-level 用法
+- [ ] **Step 1: Update `README.md`** — replace the "Status: design phase" section with working job-level usage
 
-把 README 中目前的「預期用法（實作後）」整段，替換為：
+Replace the current "Expected usage (post-implementation)" section in the README with:
 
 ````markdown
-## 用法
+## Usage
 
-在你的 repo 建立 `.github/workflows/audit.yml`：
+Create `.github/workflows/audit.yml` in your repo:
 
 ```yaml
 name: repo audit
@@ -609,21 +611,21 @@ jobs:
       claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
-需求：
-- repo secret `CLAUDE_CODE_OAUTH_TOKEN`。
-- 預設權限已含 `contents: read` + `issues: write`（workflow 自帶）。
+Requirements:
+- Repo secret `CLAUDE_CODE_OAUTH_TOKEN`.
+- Default permissions already include `contents: read` + `issues: write` (provided by the workflow itself).
 
-產出：
-- 一個帶標籤 `audit` 的 tracking issue（每次 run upsert 同一個）。
-- 一份 self-contained HTML 報告，存在該次 workflow run 的 artifacts（`report-html`）。
+Outputs:
+- A tracking issue labelled `audit` (upserted to the same issue on every run).
+- A self-contained HTML report stored as a workflow run artifact (`report-html`).
 
-可選設定檔 `.claude/audit.yml`（全可選）見 `../design.md` §5。
+Optional config file `.claude/audit.yml` (all fields optional) — see `../design.md` §5.
 ````
 
-- [ ] **Step 2: 確認 README 不再宣稱「尚未實作」**
+- [ ] **Step 2: Confirm README no longer claims "not yet implemented"**
 
 Run: `grep -n "尚未實作\|設計階段" README.md || echo "OK: no stale status"`
-Expected: `OK: no stale status`。
+Expected: `OK: no stale status`.
 
 - [ ] **Step 3: Commit**
 
@@ -634,18 +636,18 @@ git commit -m "docs: document job-level reusable-workflow usage"
 
 ---
 
-### Task 5: 全套件回歸 + 型別
+### Task 5: Full suite regression + types
 
-**Files:** （無新增；確認整體綠）
+**Files:** (no new files; confirm everything is green)
 
-- [ ] **Step 1: 全套件 + 型別 + workflow 結構**
+- [ ] **Step 1: Full suite + types + workflow structure**
 
 Run: `npx vitest run && npx tsc --noEmit`
-Expected: 全 PASS（含 finalize/workflow-structure）、無型別錯誤。
+Expected: all PASS (including finalize/workflow-structure), no type errors.
 
-- [ ] **Step 2: 本機冒煙——report CLI 仍可從假 findings 產出**
+- [ ] **Step 2: Local smoke test — report CLI still produces output from fake findings**
 
-Run（用一個臨時目錄塞一份合規 findings + synthesis，跑 `node --import tsx src/report.ts`，確認 `report.html`/`issue.md` 產生且含預期字串）：
+Run (create a temp directory with one compliant findings file + synthesis, run `node --import tsx src/report.ts`, confirm `report.html`/`issue.md` are generated and contain expected strings):
 ```bash
 d=$(mktemp -d); mkdir -p "$d/findings"
 printf '%s' '{"reviewer":"docs_staleness","status":"ok","findings":[{"file":"README.md","related":[],"reviewer":"docs_staleness","category":"staleness","problem":"p","evidence":"e","suggestion":"s","severity":"high","confidence":"high","ssot_direction":"stale_a"}]}' > "$d/findings/docs_staleness.json"
@@ -653,20 +655,20 @@ printf '%s' '{"themes":[],"semantic_duplicates":[],"executive_summary":"sum","st
 node --import tsx src/report.ts "$d/findings" "$d/synthesis.json" "$d/report.html" "$d/issue.md"
 grep -q "upkeep:report" "$d/issue.md" && head -c 20 "$d/report.html"
 ```
-Expected: 印出 `report: 1 findings ...` 且 `issue.md` 含 marker、`report.html` 以 `<!doctype html>` 開頭。
+Expected: prints `report: 1 findings ...`, `issue.md` contains the marker, and `report.html` starts with `<!doctype html>`.
 
-- [ ] **Step 3: Commit（若有任何修補）**；無修補則略過。
+- [ ] **Step 3: Commit (if any fixes were made)**; skip if nothing changed.
 
 ---
 
-### Task 6: 直播 e2e（對 `wei18/Sudoku`，手動）
+### Task 6: Live e2e (against `wei18/Sudoku`, manual)
 
 **Files:**
 - Create: `docs/e2e.md`
 
-> 這一步**需要真實 GitHub + CLAUDE_CODE_OAUTH_TOKEN**，無法在 CI 單元測完成；以文件記錄程序並由人執行一次。dev 期間 `uses:` 的 ref 用分支（非 `@v1`）。
+> This step **requires real GitHub + CLAUDE_CODE_OAUTH_TOKEN** and cannot be completed in CI unit tests; the procedure is documented here for a human to execute once. During dev the `uses:` ref uses a branch name (not `@v1`).
 
-- [ ] **Step 1: 建 `docs/e2e.md`**
+- [ ] **Step 1: Create `docs/e2e.md`**
 
 ````markdown
 # e2e 程序（對 wei18/Sudoku）
@@ -713,18 +715,17 @@ git add docs/e2e.md
 git commit -m "docs: live e2e procedure against wei18/Sudoku"
 ```
 
-- [ ] **Step 3: （人工）依 `docs/e2e.md` 跑一次直播 e2e**，把驗收檢查點逐項打勾、記錄 run URL 與調整項。此步由人執行，非 CI。
+- [ ] **Step 3: (Manual) Run the live e2e once following `docs/e2e.md`**, check off each acceptance checkpoint, and record the run URL and any adjustments. This step is performed by a human, not CI.
 
 ---
 
-## 完成定義（Plan 4b）
+## Definition of Done (Plan 4b)
 
-- `npx vitest run` 全綠（含 finalize、workflow-structure）；`npx tsc --noEmit` 乾淨。
-- 4 個 composite 子 action + 1 個 reusable workflow 就位，結構測試通過。
-- README 提供可直接複製的 job-level 用法；不再宣稱「尚未實作」。
-- `docs/e2e.md` 程序就緒；**首次直播 e2e 由人跑過、檢查點打勾**後，upkeep v1 可發佈（打 tag、把 ref 從 dev 分支改回 `@v1`）。
+- `npx vitest run` is fully green (including finalize and workflow-structure); `npx tsc --noEmit` is clean.
+- 4 composite sub-actions + 1 reusable workflow are in place and pass structure tests.
+- README provides copy-pasteable job-level usage and no longer claims "not yet implemented".
+- `docs/e2e.md` procedure is ready; **once the first live e2e has been run by a human and all checkpoints are checked off**, upkeep v1 is ready to release (tag, switch refs from dev branch back to `@v1`).
 
-## 銜接
+## Handoff
 
-至此 Plan 1-4 全部完成 → 進入 release（打 v1 tag）。依 [[project-obsidian-filing]]，全部 IMPL_APPROVED 後把 spec/plans 歸檔 Obsidian vault。多語文檔（en/zh-TW/zh-CN/ja/ko）此時才由 Content Creator/公關團隊起案（README 內容已定）。
-```
+Plans 1-4 are now complete → proceed to release (tag v1). Per [[project-obsidian-filing]], archive all specs/plans to the Obsidian vault after IMPL_APPROVED. Multi-language docs (en/zh-TW/zh-CN/ja/ko) are to be initiated by the Content Creator / PR team at this point (README content is finalized).

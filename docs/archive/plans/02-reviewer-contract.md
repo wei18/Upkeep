@@ -1,5 +1,7 @@
 # Plan 2 — Reviewer Contract + Rubric Synthesis (docs_staleness vertical slice) Implementation Plan
 
+> **Archived — historical record. Do not execute.** This plan has been implemented. Its tasks, file paths and version refs (such as `@v1` and `../design.md`) describe the repo as it was when the plan was written. Current behavior is specified in [`docs/en/design.md`](../../en/design.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Establish the data contract for the reviewer layer: findings types + runtime validator, three-layer rubric synthesis (builtin ⊕ repo conventions ⊕ audit.yml), the `docs_staleness` builtin rubric, and a shared reviewer prompt template — contract-tested via recorded findings samples. Everything is CI-safe and zero-API.

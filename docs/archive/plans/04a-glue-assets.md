@@ -1,5 +1,7 @@
 # Plan 4a — Deterministic Glue + Remaining Reviewer Rubrics Implementation Plan
 
+> **Archived — historical record. Do not execute.** This plan has been implemented. Its tasks, file paths and version refs (such as `@v1` and `../design.md`) describe the repo as it was when the plan was written. Current behavior is specified in [`docs/en/design.md`](../../en/design.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Provide the **deterministic glue and assets** required by Plan 4b (reusable workflow + composite sub-action + live e2e): `composeRubric`'s `audit.yml` paths glob, `enabledReviewers` (produces the matrix list), reviewer/synthesis prompt-bundle assembly, issue-marker lookup (pure upsert logic), and built-in rubrics for the remaining 6 reviewers. Everything is CI-safe and zero-API.
