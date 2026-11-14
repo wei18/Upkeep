@@ -24,7 +24,7 @@
       "suggestion": "補譯 Configuration 章節到 zh-TW 版。",
       "severity": "low",
       "confidence": "medium",
-      "ssot_direction": "stale_b"
+      "ssot_direction": "stale_a"
     }
   ]
 }
