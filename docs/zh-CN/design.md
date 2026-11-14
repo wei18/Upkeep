@@ -1,8 +1,7 @@
 # Upkeep — 设计文档
 
-- 状态：已实现并发布；已重新定位为 v2（Claude Code plugin + skill 分发）— 本 spec 跟踪已发布的行为
-- 日期：2026-06-04（设计）；2026-06-05 发布；v2 重新定位 2026-06-12
-- 位置：独立 repo `upkeep/`，spec 于 `docs/design.md`（见 §6）
+- 状态：已发布。本 spec 描述当前的行为。
+- 位置：repo `wei18/upkeep`。英文 base：`docs/en/design.md`；各语言译本：`docs/<locale>/design.md`（见 §6）
 - 自我约束：**本 spec 是 SSOT，需随实现持续 up-to-date**（此工具本身即在检测 drift，spec 不得漂移）
 
 ---
@@ -29,40 +28,40 @@
 
 **编排模型：fan-out → reduce（matrix + synthesis），无 LLM lead。** 每个启用的 reviewer 各跑一个独立 matrix **job**（内含一个 `claude-code-action` step；`fail-fast: false` + `continue-on-error` 做失败隔离），各自输出结构化 findings；之后一个 synthesis job（单一 LLM）读取全部 findings 做语义级跨 reviewer 关联。不依赖「单次 run 内 spawn subagent」（该能力虽经实证可行，但 per-job 在确定性/隔离/零残留风险上更优）。
 
-触发：`schedule`（cron 定期全量扫描）＋ `workflow_dispatch`（手动，可带范围参数）。
+触发：可重用 workflow 只声明 `on: workflow_call`，因此触发条件由调用方的 workflow 决定——通常是 `schedule`（cron 定期全量扫描）加 `workflow_dispatch`（手动运行）。此 workflow 没有范围相关的 input：每次运行都是全量扫描。
 > 「重复文件 / 孤儿文件 / 全局 up-to-date」需要全局视角，PR 增量做不到，故以全量扫描为主。
 
 单次 run 数据流：
 
 ```
-触发 (schedule / workflow_dispatch)
+Caller's trigger (schedule / workflow_dispatch)
   │
   ▼
-[1] Discovery（确定性，非 LLM 重活）
-    扫 repo → 文件清单 + 模态分类(code/doc/spec/visual/flow/icon...)
-    读规范来源：CLAUDE.md、.claude/skills、.claude/workflows、
-                .github/workflows、.claude/audit.yml(若有)
+[1] Discovery (deterministic, non-LLM heavy lifting)
+    Scan repo → file inventory + modality classification (code/doc/spec/visual/flow/icon...)
+    Read convention sources: CLAUDE.md, .claude/skills, .claude/workflows,
+                .github/workflows, .claude/audit.yml (if present)
   │
   ▼
-[2] Review（matrix：每个启用 reviewer 一个 claude-code-action step）
-    GHA matrix 原生并行、失败隔离；唯一 LLM 成本集中处
-    每 step 带：inventory + 负责文件子集 + 合成 rubric(内置默认 ⊕ repo 规范)
-    各自输出 findings/<reviewer>.json（schema 见 §4）
+[2] Review (matrix: one claude-code-action step per enabled reviewer)
+    GHA matrix gives native parallelism + fault isolation; the only concentrated LLM cost
+    Each step carries: inventory + its file subset + composed rubric (built-in default ⊕ repo conventions)
+    Each emits findings/<reviewer>.json (schema in §4)
   │
   ▼
-[3] Synthesis（单一 claude-code-action，唯一「融会贯通」的大脑）
-    读取全部 findings/*.json + inventory（精简结构化素材，不重读整个 repo）
-    → 语义级跨 reviewer 关联、去重、系统性主题、优先级叙事
+[3] Synthesis (single claude-code-action, the only "connect-the-dots" brain)
+    Reads all findings/*.json + inventory (compact structured material, no re-reading the whole repo)
+    → semantic cross-reviewer correlation, dedup, systemic themes, prioritized narrative
     → synthesis.json
   │
   ▼
-[4] Consolidate（确定性）
-    机械式合并 findings + synthesis、key 去重、排序(severity × confidence)
+[4] Consolidate (deterministic)
+    Mechanically merge findings + synthesis, dedup by key, sort (severity × confidence)
   │
   ▼
-[5] Report（确定性，零 LLM 成本）
-    ├─ 生成 self-contained 单文件 HTML 报告 → upload artifact
-    └─ 创建/更新 tracking issue（markdown 摘要 + 链接到 HTML artifact）
+[5] Report (deterministic, zero LLM cost)
+    ├─ Produce a self-contained single-file HTML report → upload artifact
+    └─ Create/update tracking issue (markdown summary + link to HTML artifact)
 ```
 
 要点：
@@ -76,7 +75,7 @@
 
 ### Marketplace Composite Action
 
-第三种集成形态把同一套引擎打包成 repo 根目录下的一个 composite action（`action.yml`），提供常见的 `- uses: wei18/upkeep@v2` step 语法，并可上架 [GitHub Marketplace](https://github.com/marketplace)。由于 composite action 是单一 job、不能使用 `strategy.matrix`，它的 `discovery` → `reviewer`（×7）→ `synthesis` → `report` 各 step 会依次执行而非并行——同一套引擎、同样的输入，只是在启用较多 reviewer 的 repo 上会更慢。为何上面的 reusable workflow 仍是主要路径，见 `docs/why-reusable-workflow.md`。这里的发布同样仅是打包层面，与 skill 相同：`action.yml` 调用的是 reusable workflow 所用的同一批 `.github/actions/<x>@v2` 子 action。
+第三种集成形态把同一套引擎打包成 repo 根目录下的一个 composite action（`action.yml`），提供常见的 `- uses: wei18/upkeep@v2` step 语法，并可上架 [GitHub Marketplace](https://github.com/marketplace)。由于 composite action 是单一 job、不能使用 `strategy.matrix`，它的 `discovery` → `reviewer`（×7）→ `synthesis` → `report` 各 step 会依次执行而非并行——同一套引擎、同样的输入，只是在启用较多 reviewer 的 repo 上会更慢。为何上面的 reusable workflow 仍是主要路径，见 `docs/zh-CN/why-reusable-workflow.md`。这里的发布同样仅是打包层面，与 skill 相同：`action.yml` 调用的是 reusable workflow 所用的同一批 `.github/actions/<x>@v2` 子 action。
 
 ---
 
@@ -87,27 +86,27 @@
 | Reviewer | 范围 | 主要检测问题 | 默认 |
 |---|---|---|---|
 | `docs_staleness` | README、文档、注释、**多语 README/doc 变体** | 内容陈旧、与 code 漂移、过期链接、**多语版本与 base 不同步** | on |
-| `code_hygiene` | 源代码 | 死代码、用不到的文件/函数、与 spec 不符 | on |
+| `code_hygiene` | 源代码 | 死代码、用不到的文件/函数、与 spec 不符、明显的坏味道 | on |
 | `spec_flow` | spec、流程图、状态机 | flow 与实现不一致、spec 过时 | on |
 | `visual_icon` | 图片、icon、设计稿 | 未使用素材、重复图、尺寸/命名不符规范 | on |
 | `duplicate_orphan` | 全 repo | 重复文件、孤儿文件、无人引用资源 | on |
 | `convention` | 全 repo | 违反 repo 自身 skills/workflows/CLAUDE.md 规范 | on |
 | `i18n` | 本地化字符串、`.lproj` 等 | 缺翻译、未使用 key、与 base 不同步 | **off** |
 
-第一版**不做动态自定义 reviewer**；i18n 做成内置（默认关）即可覆盖常见需求（YAGNI）。
+不支持动态自定义 reviewer（§11）。内置的 `i18n` reviewer（默认关闭）已覆盖常见需求。
 
 ### Rubric 三层合成（优先级由低到高）
 
 ```
-内置默认 rubric（action 自带，定义该专业检测什么）
-   ⊕ repo 规范自动发现（CLAUDE.md / .claude/skills / .claude/workflows
-                         中与该领域相关者）
-   ⊕ audit.yml 显式指定（reviewers.<name>.rubric 指向的 repo 文件）← 最高优先
+Built-in default rubric (shipped with the action; defines what this specialty looks for)
+   ⊕ repo-convention auto-discovery (the domain-relevant parts of
+                         CLAUDE.md / .claude/skills / .claude/workflows)
+   ⊕ audit.yml explicit override (the repo file pointed to by reviewers.<name>.rubric) ← highest priority
 ```
 
 repo 有自己的标准时优先使用 repo 的。`convention` 几乎全靠 repo 自身规范；`visual_icon` 多靠内置默认＋repo 设计规范（若有）。
 
-**Reviewer rubric 语言（`rubric_lang`）**：内置 rubric 按语系分置于 `reviewers/<locale>/`（例如 `reviewers/en/`、`reviewers/zh-TW/`）。`rubric_lang` 这个 workflow input（默认 `en`）决定 reviewer 与 synthesis 使用哪一套。
+**Reviewer rubric 语言（`rubric_lang`）**：内置 rubric 按语系分置于 `reviewers/<locale>/`，共有两套：`en` 与 `zh-TW`。`rubric_lang` 这个 workflow input（默认 `en`）决定 reviewer 与 synthesis 使用哪一套。填入其他值时找不到对应的 prompt 文件，所有 reviewer 与 synthesis step 都会失败。
 
 ### 2.1 多语文档同步检测（multilingual doc-set）
 
@@ -118,7 +117,7 @@ repo 有自己的标准时优先使用 repo 的。`convention` 几乎全靠 repo
 - **支持语言（最多 6）**：`en`(base)、`zh-TW`、`zh-CN`、`ja`、`ko`（预留第 6）。
 - **检测**：以 base（`docs/en/<name>.md`，README 则为根 `README.md`）为对照，对每个 `docs/<locale>/<name>.md` 报告「落后/缺漏/过时」。沿用 §3 原则——附证据（git 近期度：base 改了但某语译本没跟进），不预设「翻译一定是该更新的那方」，但 base 较新时通常倾向翻译落后。
 - **分组**：reviewer 由「同名文件跨 `docs/<locale>/` 子目录」分组（README 另把根 `README.md` 与 `docs/<locale>/README.md` 视为同组）。
-- **Dogfood**：本 repo 自身全套用户文档（README、overview、design、why-reusable-workflow、plans）均多语化于 `docs/<locale>/`，同时作为此能力的真实测试样本（见 §10）。
+- **Dogfood**：本 repo 自身全套用户文档（README、overview、design、why-reusable-workflow）均多语化于 `docs/<locale>/`，同时作为此能力的真实测试样本（见 §10）。
 
 ---
 
@@ -131,34 +130,53 @@ repo 有自己的标准时优先使用 repo 的。`convention` 几乎全靠 repo
 1. **检测分歧、不下定论**：报「A 说 X，B 说 Y，不一致」，而非「B 过时了」。
 2. **附证据信号**：git 最后修改时间 / commit 近期度、被引用次数、引用方向。
 3. **分级裁决**：
-   - 证据强（如某文件半年未动、相关 code 上周大改）→ 建议里明确方向（「README 较旧，建议更新」），仍标 `needs-confirmation`。
-   - 证据弱 → 标「drift，方向待裁决」。
-   - **任何情况都不自动修改**（自动修复留第二阶段）。
-4. **SSOT 不靠声明文件**：方向全靠推断，避免声明文件自身过旧。真有固定策略的 repo 才用 escape hatch 覆盖（非必要、不鼓励）。
+   - 证据强（如某文件半年未动、相关 code 上周大改）→ 将 `ssot_direction` 设为 `stale_a` 或 `stale_b`（§4），并在建议里明确方向（「README 较旧，建议更新」）。仍需人工确认。
+   - 证据弱 → 将 `ssot_direction` 设为 `uncertain`，并在建议里说明方向需由人判断。
+   - **任何情况都不自动修改**（自动修复不在范围内，见 §11）。
+4. **SSOT 不靠声明文件**：方向全靠推断，避免声明文件自身过旧。真有固定策略的 repo 可以把策略写进覆盖用的 rubric（`reviewers.<name>.rubric`，§5）；非必要、不鼓励。
 
 ---
 
 ## 4. findings schema
 
-每位 reviewer 对每个问题输出：
+每位 reviewer 写出一份 `findings/<reviewer>.json`，每个问题一条记录：
 
-```jsonc
+```json
 {
-  "file": "path/to/file",          // 主体文件（跨文件问题放主文件，related 补充）
-  "related": ["path/..."],          // 关联文件（可为空）
   "reviewer": "docs_staleness",
-  "category": "staleness | duplicate | orphan | convention | inconsistency | ...",
-  "problem": "人类可读的问题描述",
-  "evidence": "支撑证据（git 时间、引用关系、具体不符之处）",
-  "suggestion": "建议修改方案（分级裁决下可能含方向）",
-  "severity": "high | medium | low",
-  "confidence": "high | medium | low",
-  "ssot_direction": "stale_a | stale_b | uncertain | n/a",
-  "status": "ok"                    // reviewer 级别：ok | failed
+  "status": "ok",
+  "findings": [
+    {
+      "file": "path/to/file",
+      "related": ["path/to/other-file"],
+      "reviewer": "docs_staleness",
+      "category": "staleness",
+      "problem": "...",
+      "evidence": "...",
+      "suggestion": "...",
+      "severity": "medium",
+      "confidence": "high",
+      "ssot_direction": "stale_a"
+    }
+  ]
 }
 ```
 
-每个 reviewer step 输出一份 `findings/<reviewer>.json`：`{ reviewer, status: "ok"|"failed", findings: Finding[] }`（单个 reviewer 失败时 `status:"failed"`、`findings:[]`，不影响其他）。
+- `status`：`ok` 或 `failed`。失败的 reviewer 写出 `status: "failed"` 与 `findings: []`；不影响其他 reviewer。
+- `file`：主体文件。跨文件问题放在主体文件，其余文件列在 `related`。
+- `related`：其他相关文件，可为空。比对的另一方排在第一个。
+- `category`：`staleness`、`duplicate`、`orphan`、`convention`、`inconsistency`、`i18n_sync`、`other` 之一。
+- `problem`：人类可读的问题描述。
+- `evidence`：支撑证据（git 时间、引用关系、具体不符之处）。
+- `suggestion`：建议修法；在分级裁决下可指出方向（§3）。
+- `severity`、`confidence`：各为 `low`、`medium`、`high` 之一。
+- `ssot_direction`：以下四个值之一。
+  - `stale_a`：`file` 是过时的一方。
+  - `stale_b`：`related` 的第一个文件是过时的一方。
+  - `uncertain`：两方不一致，但证据无法判断哪一方过时。
+  - `n/a`：此问题没有可比对的两方。
+
+`category`、`severity`、`confidence` 各值的判断标准只定义在一处：reviewer prompt（`reviewers/<locale>/_reviewer-prompt.md`）。`src/findings.ts` 会按合法值校验每份文件；校验失败的文件会被替换为 `failed` 结果。
 
 **Consolidate 去重/排序（确定性）**：以 `file` + `category` 为键合并跨 reviewer 重复——同键取「代表 finding」= severity×confidence 最高者（平手以 reviewer 枚举顺序为稳定 tiebreak），`reviewers[]` 为该键所有上报者的并集、`related[]` 取并集。排序键 = severity desc → confidence desc → file asc。
 
@@ -166,21 +184,26 @@ repo 有自己的标准时优先使用 repo 的。`convention` 几乎全靠 repo
 
 Synthesis step 读取全部 `findings/*.json` + inventory，输出 `synthesis.json`。**以 file 路径引用 findings（不用整数索引——对 LLM 更稳定、人类可读）**：
 
-```jsonc
+```json
 {
-  "themes": [                         // 跨 reviewer 的系统性主题
+  "themes": [
     {
-      "title": "简述系统性问题",
-      "narrative": "为何这些 finding 指向同一根因",
-      "related_files": ["path/a", "path/b"],  // 此主题涵盖的文件路径
-      "priority": "high | medium | low"
+      "title": "...",
+      "narrative": "...",
+      "related_files": ["path/a", "path/b"],
+      "priority": "high"
     }
   ],
-  "semantic_duplicates": [[ "reviewer|file|category", "reviewer|file|category" ]], // 语义重复的 finding 键组
-  "executive_summary": "整体健康度的一段话摘要",
-  "status": "ok"                      // synthesis 失败→report 仍输出 raw findings
+  "semantic_duplicates": [["reviewer|file|category", "reviewer|file|category"]],
+  "executive_summary": "...",
+  "status": "ok"
 }
 ```
+
+- `themes`：跨 reviewer 的系统性主题。`title` 简述系统性问题；`narrative` 说明为何这些 finding 指向同一根因；`related_files` 列出此主题涵盖的文件路径；`priority` 为 `low`、`medium` 或 `high`。
+- `semantic_duplicates`：描述同一问题的 finding 键群，每个键的格式为 `reviewer|file|category`。Consolidate 会把每一群合并成一条 finding。
+- `executive_summary`：整体健康度的一段话摘要。
+- `status`：`ok` 或 `failed`。synthesis 失败时写出 `themes: []`。
 
 Report 同时使用 raw findings 与 synthesis；synthesis 失败或不存在时降级为只呈现 raw findings（无 themes/exec summary）。
 
@@ -191,78 +214,93 @@ Report 同时使用 raw findings 与 synthesis；synthesis 失败或不存在时
 `scan` 与 `ssot` **不放入配置**（会自行过旧）；改为自动推断。
 
 ```yaml
-# .claude/audit.yml —— 全部可选；通常不需要此文件
+# .claude/audit.yml
 version: 1
-ignore:                  # 可选：从整个审计中排除的 glob 路径（所有 reviewer）
-  - "docs/*/plans/**"    # 例如不想被审计的归档设计记录
-reviewers:               # 只列「要关掉/调范围/开 i18n」的，其余按默认
+ignore:
+  - "docs/*/plans/**"
+reviewers:
   visual_icon: { enabled: false }
   i18n:        { enabled: true }
+  docs_staleness:
+    paths: ["README.md", "docs/**"]
+    rubric: "docs/audit-rubric.md"
 report:
-  issue_label: "audit"   # 默认即 "audit"，需修改才写
-  min_severity: "low"    # 低于此不进 issue（仍进 HTML 完整报告）
+  min_severity: "low"
 ```
 
-> 配置键以 `snake_case` 显示（`issue_label`、`min_severity`）；`snake_case` 与内部 `camelCase`（`issueLabel`、`minSeverity`）均可接受。
+所有键均为可选：
+
+- `version`：配置 schema 版本；目前为 `1`。
+- `ignore`：glob 路径。匹配的文件会从 inventory 中排除，任何 reviewer 都看不到。默认：无。
+- `reviewers.<name>.enabled`：开启或关闭某位 reviewer。默认：除 `i18n` 外全部开启。未列出的 reviewer 保持默认；未知的名称会被忽略。
+- `reviewers.<name>.paths`：glob 路径。设置后，该 reviewer 的 target 文件改为 inventory 中匹配的文件，不再按文件类型选取（§2 表格的「范围」列）。
+- `reviewers.<name>.rubric`：rubric 文件相对于 repo 根的路径。reviewer 会把它当作最高优先级的 rubric 层（§2）。
+- `report.min_severity`：`low`、`medium` 或 `high`。低于此值的 finding 不进 tracking issue；HTML 报告仍保留全部 finding。默认：`low`。也接受 camelCase 写法 `minSeverity`。
+
+Glob 语法：`*` 匹配单个路径段内的字符，`**` 可跨路径段，`?` 匹配一个字符。
+
+issue 的 label 不是配置键，请用 `issue_label` 这个 workflow input 设置（默认 `audit`）。
 
 ### 自动推断（无需配置）
 
-- **扫描范围**：遵守 repo `.gitignore`；自动跳过 binary / lockfile / 构建产物；文本文件内置 100KB 上限（见 §7 模态分流）。
+- **扫描范围**：`git ls-files --cached --others --exclude-standard` 列出的所有文件（已跟踪与未跟踪的文件，遵守 `.gitignore`），再扣除 `ignore` 的 glob。lockfile 的文件类别为 `other`，因此只有查看全 repo 的 reviewer（`duplicate_orphan`、`convention`）会收到。超过 100KB 的文本文件只会被标记，不会被跳过（§7）。
 - **SSOT 方向**：全靠证据推断（§3），无声明文件。
 
 ---
 
 ## 6. Repo 落点（已定）
 
-此 action 发布成可被 `uses:` 引用者，故独立成 repo。本地目录 `/Users/zw/GitHub/Wei18/repo-audit-action/`（已 `git init`）；**发布/包名为 `Upkeep`**（`uses: wei18/upkeep@v2`）——本地文件夹名与发布名不同是刻意保留。
+Upkeep 以 `uses:` 被引用，故独立成 repo：`wei18/upkeep`（`uses: wei18/upkeep@v2`）。
 
-预期结构：
+结构：
 
 ```
-repo-audit-action/                   # 本地目录（发布名 Upkeep）
-├── action.yml                        # composite action（用于 Marketplace 上架）：`uses: wei18/upkeep@v2`，reviewer step 依次执行
+upkeep/
+├── action.yml                        # composite action (Marketplace listing): `uses: wei18/upkeep@v2`, sequential reviewer steps
 ├── .github/
-│   ├── workflows/audit.yml          # 可复用 workflow（on: workflow_call）：jobs/matrix 编排
-│   └── actions/                     # composite 子 action（被 workflow 的 job uses，自带 Upkeep 代码）
+│   ├── workflows/audit.yml          # reusable workflow (on: workflow_call): jobs/matrix orchestration
+│   └── actions/                     # composite sub-actions (used by the workflow's jobs; carry Upkeep's own code)
 │       ├── discovery/  reviewer/  synthesis/  report/
-├── .claude-plugin/marketplace.json  # plugin marketplace 清单（plugin 名称：upkeep，source：./skills/upkeep-audit）
-├── README.md                        # 英文 base 用法（job 级 uses: 示例、secret/权限）+ 语言切换列
+├── .claude-plugin/marketplace.json  # plugin marketplace catalog (plugin name: upkeep, source: ./skills/upkeep-audit)
+├── README.md                        # English base usage (job-level uses: example, secret/permissions) + language switcher
 ├── docs/
-│   ├── en/      README 无（根即 en）；overview.md  design.md  why-reusable-workflow.md  plans/
-│   ├── zh-TW/   README.md  overview.md  design.md  why-reusable-workflow.md  plans/
-│   ├── zh-CN/ … ja/ … ko/   （同上各语一套）
-│   └── （多语用户文档一律 docs/<locale>/；root README.md 为 en base）
-├── reviewers/<locale>/              # 7 位内置 rubric + _reviewer-prompt + _synthesis-prompt，按语系分置（en、zh-TW）；由 rubric_lang 选择
-├── skills/upkeep-audit/             # Claude Code skill：本地执行薄包装（clone 到 ~/.cache/upkeep）
-│   └── .claude-plugin/plugin.json   # plugin manifest（single-skill 布局；SKILL.md 位于 plugin 根目录）
-├── scripts/local-audit.sh           # 本地 pipeline 协调器（与 CI 同流程；中间产物放临时目录）
-├── src/                             # discovery/consolidate/report/matrix/prompt-bundle 等确定性 TS
-└── test/                            # 单元 + 契约 + e2e（样本见 §10）
+│   ├── en/      overview.md  design.md  why-reusable-workflow.md   (no README: the root README.md is the en base)
+│   ├── zh-TW/   README.md  overview.md  design.md  why-reusable-workflow.md
+│   ├── zh-CN/ … ja/ … ko/   (same set as zh-TW)
+│   ├── archive/plans/               # original implementation plans: historical record, not localized
+│   └── superpowers/                 # design-process specs and plans: historical record, not localized
+├── reviewers/<locale>/              # 7 built-in rubrics + _reviewer-prompt + _synthesis-prompt, per locale (en, zh-TW); picked by rubric_lang
+├── skills/upkeep-audit/             # Claude Code skill: thin local-run wrapper (clones to ~/.cache/upkeep)
+│   └── .claude-plugin/plugin.json   # plugin manifest (single-skill layout; SKILL.md at plugin root)
+├── scripts/local-audit.sh           # local pipeline orchestrator (same flow as CI; temp-dir intermediates)
+├── src/                             # deterministic TS: discovery/consolidate/report/matrix/prompt-bundle, etc.
+└── test/                            # unit + contract tests (§10)
 ```
 
-> 归档说明：`docs/<locale>/plans/` 子树是原始逐步实现计划的刻意**归档**（每种语言一套）。它刻意不被任何导航索引链接，且其 fenced 块（代码与嵌入的文档模板）一律保留 zh-TW 源的**逐字**内容——因此这些文件的空 `referencedBy` 与 fence 内的非英文内容均为预期，并非漂移。
+> 归档说明：`docs/archive/plans/` 与 `docs/superpowers/` 是 Upkeep 构建过程的历史记录。它们不做多语化、不被任何导航索引链接，也不是现行规则——现行规则以本 spec 为准。`.claude/audit.yml` 把这两个 `plans/` 目录排除在自我审计之外。
 
 > 子 action 机制：reusable workflow 的 job 跑在**调用方**的 checkout；Upkeep 自身代码（src/、reviewers/）通过 `uses: wei18/upkeep/.github/actions/<x>@v2` 引入（GitHub 自动拉取 Upkeep repo）。每个 reviewer 是独立 matrix job 跑一个 plain `claude-code-action` prompt（写入 `findings/<reviewer>.json`），**无需 in-run subagent**，故 `--agents`/`Agent` passthrough 风险消失。
 
 ---
 
-## 7. 模态分流（取代「一条 byte 上限打天下」）
+## 7. 模态分流
 
-100KB 上限只该管「当文本塞进 LLM 的文件」，不该套到图片。
+Discovery 为每个文件指定一个 `modality`。100KB 上限只管 reviewer 当文本读取的文件，不套用到图片。
 
-| 文件类型 | 处理方式 | 100KB byte 上限 |
+| `modality` | 适用对象 | reviewer 如何处理 |
 |---|---|---|
-| 文本类（code/doc/spec/`.md`） | 当文本读取；超限→**分块或先摘要再点名深读**，不静默丢弃 | 套用（超限→分块） |
-| 向量/文本型流程图（`.svg`/`.mmd`/`.dot`/`.puml`） | 当**源码文本**读取（语义可 diff） | 套用（通常很小） |
-| 位图（png/jpg/webp…） | byte 大小无关；用**尺寸/百万像素预算**，送 vision 前先 downscale | **不套用** |
+| `raster_image` | `.png`、`.jpg`、`.jpeg`、`.gif`、`.webp`、`.bmp`、`.tiff`、`.heic`、`.ico`、`.icns` | 无 byte 上限。依 metadata 判断；只有下方列出的唯一情况才当图片打开 |
+| `vector_diagram` | `.svg`、`.mmd`、`.dot`、`.puml`、`.plantuml` | 当**源码文本**读取（语义可 diff）。超过 100KB 时，inventory 会设 `oversizedText: true` |
+| `binary` | 前 8000 bytes 内含 NUL byte 的其他文件 | 只依 metadata 判断（`hash`、`sizeBytes`、`referencedBy`） |
+| `text` | 其余所有文件 | 当文本读取。超过 100KB 时，inventory 会设 `oversizedText: true` |
 
-关键：visual reviewer 多数工作不需「看」图——
-- 重复图 → 文件 hash（精确/感知）
+`oversizedText` 只是 inventory 里的一个标记：不会有任何文件因为大小而被截断、分块、摘要或丢弃。reviewer prompt 会要求 reviewer 分段读取被标记的文件。
+
+visual reviewer 多数工作不需「看」图：
+- 重复图 → 文件 hash（完全相同）
 - 孤儿图 → 引用关系图
 - 命名/尺寸规范 → metadata
-- **只有「图内容是否符合设计/spec」才送 vision（先 downscale）**
-
-唯一会被跳过的是无法处理的超大未知 binary，且报告明确列出 `未检视：超大 binary`，不静默吞掉。
+- **只有「图内容是否符合设计/spec」才需要打开图片**；rubric 限制只打开少数可疑素材
 
 ---
 
@@ -270,10 +308,9 @@ repo-audit-action/                   # 本地目录（发布名 Upkeep）
 
 | 失败场景 | 处置方式 |
 |---|---|
-| 某 reviewer matrix step 挂掉/超时 | 该 step 输出 `status:"failed"`、`findings:[]`（matrix `fail-fast: false`）；其余 step 照常；报告与 issue 明确列出「本次缺 X」 |
-| Anthropic API 临时错误 | 该 step 重试（指数退避，上限 2 次）；仍失败才降级 |
+| 某 reviewer 挂掉、超时或写出不合法的输出 | 该 reviewer 的结果变为 `status:"failed"`、`findings:[]`（matrix `fail-fast: false`）；其余 reviewer 照常；报告与 issue 以「未完整运行」警告列出失败的 reviewer |
 | Synthesis step 失败 | 降级：Report 只呈现 raw findings（不含跨领域主题/叙事），不让整个 run 失败 |
-| 全部 reviewer 失败 | workflow fail，不创建空 issue |
+| 全部 reviewer 失败 | run 仍会完成：照常产出报告与 issue，内容没有 finding，「未完整运行」警告会列出每一位 reviewer |
 | Discovery 扫到 0 个文件 | 正常结束，留 log，非错误 |
 
 原则：Review/Synthesis 阶段子失败一律隔离降级；确定性骨架（Discovery/Consolidate/Report）失败才让整个 run fail。
@@ -282,8 +319,9 @@ repo-audit-action/                   # 本地目录（发布名 Upkeep）
 
 ## 9. 成本控制
 
-- 100KB／文件上限 + 跳过 binary/lockfile/构建产物（§5、§7）
-- **分层送读**：先送清单＋摘要，由 reviewer 点名深读，不无脑全文塞入
+- reviewer 收到的是 inventory（metadata）与 target 文件清单，而不是文件内容。prompt 要求先用 metadata 筛出可疑的文件，只深读那些文件
+- `max_turns`（默认 30）限制每次 reviewer 调用与 synthesis 调用的 turn 数
+- 被 `.gitignore` 或 `ignore` 排除的文件不会进入 inventory（§5）
 - HTML / issue 组装是纯文本，**零 LLM 成本**
 
 ---
@@ -296,13 +334,14 @@ repo-audit-action/                   # 本地目录（发布名 Upkeep）
 - **LLM 层 → 契约测试**：验证 subagent 输出**符合 findings schema**（字段齐全、severity/confidence/ssot_direction 在合法值域），不逐字断言内容。
   - CI：用**录制假 response** 做 schema 契约测试（省钱、稳定）。
   - 真实调用 API：仅手动 / release 前 smoke。
-- **端到端 smoke**：对 Sudoku repo 跑完整 action，断言产出 HTML/issue 存在、findings 符合 schema、抓到合理数量问题（不逐字断言）。
+- **端到端 smoke（手动，不在 CI 内）**：对 Sudoku repo 跑完整 workflow，确认 HTML artifact 与 issue 存在、findings 符合 schema、抓到合理数量的问题（不逐字断言）。
+- **Dogfood**：`.github/workflows/self-audit.yml` 每周对本 repo 运行一次审计。
 
 ---
 
-## 11. 范围边界（第一版不做）
+## 11. 范围边界（不做的事）
 
-- 自动修复 PR（自动改 README/删孤儿文件）——留第二版
-- 动态自定义 reviewer——i18n 内置已覆盖
-- PR 增量模式——以全量扫描为主
-- SSOT 声明文件——改为纯推断
+- 自动修复 PR（自动改 README/删孤儿文件）——没有计划；Upkeep 只输出报告
+- 动态自定义 reviewer——reviewer 组合固定；以 `reviewers.<name>.paths` 与 `reviewers.<name>.rubric`（§5）调整内置的 reviewer
+- PR 增量模式——每次运行都是全量扫描
+- SSOT 声明文件——方向由证据推断
