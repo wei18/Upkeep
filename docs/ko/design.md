@@ -164,7 +164,7 @@ Built-in default rubric (shipped with the action; defines what this specialty lo
 
 - `status`: `ok` 또는 `failed`. 실패한 reviewer는 `status: "failed"`와 `findings: []`를 작성하며, 다른 reviewer에는 영향이 없습니다.
 - `file`: 주 파일. 여러 파일에 걸친 문제는 주 파일에 기록하고 나머지는 `related`에 나열합니다.
-- `related`: 관련된 다른 파일. 비어 있어도 됩니다. 비교 대상인 반대쪽 파일을 맨 앞에 둡니다.
+- `related`: 관련된 다른 파일. 비어 있어도 됩니다. 비교 대상인 반대쪽 파일을 맨 앞에 둡니다. 이 순서는 `findings/<reviewer>.json` 안에서만 의미가 있습니다: Consolidate가 `related`를 병합하고 다시 정렬하므로, 통합된 보고서에서는 이 순서가 유지되지 않습니다.
 - `category`: `staleness`, `duplicate`, `orphan`, `convention`, `inconsistency`, `i18n_sync`, `other` 중 하나.
 - `problem`: 사람이 읽을 수 있는 문제 설명.
 - `evidence`: 뒷받침하는 증거 (git 시간, 참조 관계, 구체적인 불일치 지점).
@@ -311,7 +311,7 @@ visual reviewer의 대부분 작업은 이미지를 "보는" 것이 불필요합
 | 특정 reviewer가 중단되거나, 타임아웃되거나, 유효하지 않은 출력을 작성함 | 해당 reviewer의 결과가 `status:"failed"`, `findings:[]`가 됨 (matrix `fail-fast: false`); 나머지 reviewer는 정상 진행; 보고서와 이슈가 "불완전한 실행" 경고로 실패한 reviewer를 명시 |
 | Synthesis step 실패 | 강등: Report가 raw findings만 표시（교차 영역 주제/서술 없음）, 전체 run을 실패로 만들지 않음 |
 | 모든 reviewer 실패 | run은 그대로 완료됨: 보고서와 이슈가 finding 없이 생성되고, "불완전한 실행" 경고가 모든 reviewer를 나열 |
-| Discovery 스캔 결과 파일 0개 | 정상 종료, 로그 기록, 오류 아님 |
+| Discovery 스캔 결과 파일 0개 | 정상 종료, 오류 아님 |
 
 원칙: Review/Synthesis 단계의 서브 실패는 모두 격리 강등 처리; 확정적 골격(Discovery/Consolidate/Report) 실패 시에만 전체 run을 실패로 처리합니다.
 

@@ -38,5 +38,5 @@
 
 - `priority` 只能填一個值：`low`、`medium` 或 `high`，表示這個 theme 該多快處理。只寫值本身，例如 `"priority": "high"`。
 - `semantic_duplicates` 的每個鍵，是一筆 finding 的 `reviewer`、`file`、`category` 以 `|` 相連。每個內層清單是一組重複，至少要有兩個鍵。沒有重複時用 `[]`。
-- 沒有找到 theme：寫出 `"themes": []`，`"status"` 仍為 `"ok"`。
+- 沒有找到 theme：寫出 `"themes": []`，並維持 `"status": "ok"`。
 - 你無法完成任務：寫出 `"status": "failed"`、`"themes": []`、`"semantic_duplicates": []` 與 `"executive_summary": ""`。report 會改為只呈現 raw findings。

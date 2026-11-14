@@ -164,7 +164,7 @@ Built-in default rubric (shipped with the action; defines what this specialty lo
 
 - `status`：`ok` または `failed`。失敗した reviewer は `status: "failed"` と `findings: []` を書き出し、他の reviewer には影響しない。
 - `file`：主となるファイル。複数ファイルにまたがる問題は主となるファイルに記録し、残りは `related` に列挙する。
-- `related`：関連するその他のファイル。空でもよい。比較の相手側となるファイルを先頭に置く。
+- `related`：関連するその他のファイル。空でもよい。比較の相手側となるファイルを先頭に置く。この順序が意味を持つのは `findings/<reviewer>.json` の中だけである：Consolidate は `related` をマージして並べ替えるため、統合後のレポートではこの順序は保持されない。
 - `category`：`staleness`、`duplicate`、`orphan`、`convention`、`inconsistency`、`i18n_sync`、`other` のいずれか。
 - `problem`：人間が読める問題の説明。
 - `evidence`：裏付けとなる証拠（git の時刻、参照関係、具体的な不一致箇所）。
@@ -311,7 +311,7 @@ visual reviewer の作業の大部分は実際に「画像を見る」必要が�
 | ある reviewer がクラッシュ・タイムアウトする、または不正な出力を書き出す | その reviewer の結果は `status:"failed"`・`findings:[]` になる（matrix の `fail-fast: false`）；他の reviewer は通常通り続行；レポートと issue は「不完全な実行」の警告で失敗した reviewer を明記する |
 | Synthesis ステップの失敗 | フォールバック：レポートは raw findings のみ表示（横断的テーマ/ナレーティブなし）、run 全体を失敗にしない |
 | 全 reviewer が失敗 | run は完了する：レポートと issue は finding なしで生成され、「不完全な実行」の警告がすべての reviewer を列挙する |
-| Discovery でファイルが 0 件 | 正常終了、ログを残す、エラーではない |
+| Discovery でファイルが 0 件 | 正常終了、エラーではない |
 
 原則：Review/Synthesis フェーズのサブ障害は全て隔離してフォールバック；確定的骨格（Discovery/Consolidate/Report）の障害が run 全体を失敗とする。
 

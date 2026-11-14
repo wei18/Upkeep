@@ -164,7 +164,7 @@ Each reviewer writes one file, `findings/<reviewer>.json`, with one record per p
 
 - `status`: `ok` or `failed`. A failed reviewer writes `status: "failed"` with `findings: []`; the other reviewers are unaffected.
 - `file`: the primary file. A cross-file problem goes on the primary file, and `related` lists the others.
-- `related`: the other files involved; may be empty. The file on the other side of a comparison comes first.
+- `related`: the other files involved; may be empty. The file on the other side of a comparison comes first. This order is meaningful only in `findings/<reviewer>.json`: Consolidate merges and sorts `related`, so the consolidated report does not preserve it.
 - `category`: one of `staleness`, `duplicate`, `orphan`, `convention`, `inconsistency`, `i18n_sync`, `other`.
 - `problem`: human-readable description of the problem.
 - `evidence`: supporting evidence (git timestamps, reference relationships, the specific mismatch).
@@ -311,7 +311,7 @@ Most visual reviewer work does not require "seeing" the image:
 | A reviewer crashes, times out, or writes invalid output | That reviewer's result becomes `status:"failed"`, `findings:[]` (matrix `fail-fast: false`); the other reviewers continue normally; the report and the issue name the failed reviewers in an incomplete-run warning |
 | Synthesis step fails | Degrades: Report presents only raw findings (no cross-domain themes/narrative); the overall run does not fail |
 | All reviewers fail | The run still completes: the report and the issue are produced with no findings, and the incomplete-run warning names every reviewer |
-| Discovery scans 0 files | Completes normally, leaves a log entry, not treated as an error |
+| Discovery scans 0 files | Completes normally, not treated as an error |
 
 Principle: failures within the Review/Synthesis stage are always isolated and degraded gracefully; only failures in the deterministic skeleton (Discovery/Consolidate/Report) cause the entire run to fail.
 

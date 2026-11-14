@@ -164,7 +164,7 @@ repo 有自己的標準時優先用 repo 的。`convention` 幾乎全靠 repo �
 
 - `status`：`ok` 或 `failed`。失敗的 reviewer 寫出 `status: "failed"` 與 `findings: []`；不影響其他 reviewer。
 - `file`：主體檔。跨檔問題放在主體檔，其餘的檔列在 `related`。
-- `related`：其他相關的檔，可為空。比對的另一方排在第一個。
+- `related`：其他相關的檔，可為空。比對的另一方排在第一個。這個順序只在 `findings/<reviewer>.json` 內有意義：Consolidate 會合併並重新排序 `related`，因此彙整後的報告不保留此順序。
 - `category`：`staleness`、`duplicate`、`orphan`、`convention`、`inconsistency`、`i18n_sync`、`other` 其中之一。
 - `problem`：人類可讀的問題描述。
 - `evidence`：支撐證據（git 時間、引用關係、具體不符之處）。
@@ -311,7 +311,7 @@ visual reviewer 多數工作不需「看」圖：
 | 某 reviewer 掛掉、超時或寫出不合法的輸出 | 該 reviewer 的結果變為 `status:"failed"`、`findings:[]`（matrix `fail-fast: false`）；其餘 reviewer 照常；報告與 issue 以「未完整執行」警告列出失敗的 reviewer |
 | Synthesis step 失敗 | 降級：Report 只呈現 raw findings（不含跨領域主題/敘事），不讓整個 run fail |
 | 全部 reviewer 失敗 | run 仍會完成：照常產出報告與 issue，內容沒有 finding，「未完整執行」警告會列出每一位 reviewer |
-| Discovery 掃到 0 檔 | 正常結束，留 log，非錯誤 |
+| Discovery 掃到 0 檔 | 正常結束，非錯誤 |
 
 原則：Review/Synthesis 階段子失敗一律隔離降級；確定性骨架（Discovery/Consolidate/Report）失敗才讓整個 run fail。
 

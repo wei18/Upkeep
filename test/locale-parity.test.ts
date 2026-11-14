@@ -10,29 +10,42 @@ import { FINDING_CATEGORIES, SEVERITIES, SSOT_DIRECTIONS } from '../src/types.js
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
+/** Markdown file names in a directory, sorted (ignores `.DS_Store` and other strays). */
+const markdownFiles = (rel: string) => readdirSync(join(ROOT, rel)).filter((f) => f.endsWith('.md')).sort();
+const sorted = (xs: readonly string[]) => [...xs].sort();
+
+const isFence = (line: string) => line.trimStart().startsWith('```');
+
+/** Each line of a markdown file with whether it is inside a fenced block; fence lines count as inside. */
+function withFenceState(md: string): Array<{ line: string; fence: boolean; inFence: boolean }> {
+  let open = false;
+  const out = md.split('\n').map((line) => {
+    const fence = isFence(line);
+    const inFence = open || fence;
+    if (fence) open = !open;
+    return { line, fence, inFence };
+  });
+  if (open) throw new Error('unterminated fenced code block');
+  return out;
+}
 
 /** Fenced code blocks of a markdown file, each as its full text (fence lines included). */
 function fencedBlocks(md: string): string[] {
   const blocks: string[] = [];
-  let open: string[] | null = null;
-  for (const line of md.split('\n')) {
-    const isFence = line.trimStart().startsWith('```');
-    if (open) {
-      open.push(line);
-      if (isFence) { blocks.push(open.join('\n')); open = null; }
-    } else if (isFence) {
-      open = [line];
-    }
+  let current: string[] | null = null;
+  for (const { line, fence, inFence } of withFenceState(md)) {
+    if (!inFence) continue;
+    if (current === null) { current = [line]; continue; }
+    current.push(line);
+    if (fence) { blocks.push(current.join('\n')); current = null; }
   }
   return blocks;
 }
 
 /** One structural token per line; text inside a fenced block counts as "code". */
 function lineShape(md: string): string[] {
-  let inFence = false;
-  return md.split('\n').map((line) => {
-    const isFence = line.trimStart().startsWith('```');
-    if (isFence) { inFence = !inFence; return 'fence'; }
+  return withFenceState(md).map(({ line, fence, inFence }) => {
+    if (fence) return 'fence';
     if (inFence) return 'code';
     const heading = /^(#+) /.exec(line);
     if (heading) return `h${heading[1].length}`;
@@ -44,6 +57,11 @@ function lineShape(md: string): string[] {
   });
 }
 
+/** Backticked tokens of each line outside fenced blocks, sorted per line (word order differs between languages). */
+function codeTokensPerLine(md: string): string[][] {
+  return withFenceState(md).map(({ line, inFence }) => (inFence ? [] : sorted(line.match(/`[^`]*`/g) ?? [])));
+}
+
 /** The first ```json block of a prompt file, parsed. */
 function jsonContract(md: string): unknown {
   const block = fencedBlocks(md).find((b) => b.startsWith('```json'));
@@ -51,69 +69,112 @@ function jsonContract(md: string): unknown {
   return JSON.parse(block.split('\n').slice(1, -1).join('\n'));
 }
 
+// Contract fields whose value is a closed set in src/types.ts (ReviewerName, status, FindingCategory,
+// Severity, Confidence, SsotDirection, Theme.priority). Every other string in the examples is free text.
+const ENUM_KEYS = new Set(['reviewer', 'status', 'category', 'severity', 'confidence', 'ssot_direction', 'priority']);
+
 /** Same JSON with every free-text string blanked, so only keys and enum values are compared. */
-function contractSkeleton(value: unknown, enumKeys: Set<string>, key = ''): unknown {
-  if (Array.isArray(value)) return value.map((v) => contractSkeleton(v, enumKeys, key));
+function contractSkeleton(value: unknown, key = ''): unknown {
+  if (Array.isArray(value)) return value.map((v) => contractSkeleton(v, key));
   if (typeof value === 'object' && value !== null) {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, contractSkeleton(v, enumKeys, k)]));
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, contractSkeleton(v, k)]));
   }
-  return enumKeys.has(key) ? value : '';
+  return ENUM_KEYS.has(key) ? value : '';
+}
+
+/**
+ * The enum tables of the reviewer prompt: field name -> values in the first column.
+ * A table belongs to the nearest preceding line that starts with a backticked field name.
+ */
+function enumTables(md: string): Record<string, string[]> {
+  const tables: Record<string, string[]> = {};
+  let field: string | null = null;
+  for (const { line, inFence } of withFenceState(md)) {
+    if (inFence) continue;
+    const intro = /^`([a-z_]+)`/.exec(line);
+    if (intro) { field = intro[1]; continue; }
+    const row = /^\| `([^`]+)` \|/.exec(line);
+    if (row && field) (tables[field] ??= []).push(row[1]);
+  }
+  return tables;
+}
+
+/** Category values a rubric names: the backticked tokens that follow the word "category" on a line. */
+function rubricCategories(md: string): string[] {
+  return withFenceState(md).flatMap(({ line, inFence }) => {
+    const at = inFence ? -1 : line.toLowerCase().lastIndexOf('category');
+    if (at < 0) return [];
+    return (line.slice(at).match(/`[^`]*`/g) ?? []).map((t) => t.slice(1, -1));
+  });
 }
 
 describe('reviewer prompts: en <-> zh-TW parity', () => {
   const BASE = 'en';
   const OTHER = 'zh-TW';
-  const files = readdirSync(join(ROOT, 'reviewers', BASE)).sort();
+  const LOCALES = [BASE, OTHER];
+  const files = markdownFiles(`reviewers/${BASE}`);
+  const rubrics = files.filter((f) => !f.startsWith('_'));
 
   it('both locales hold the same files', () => {
-    expect(readdirSync(join(ROOT, 'reviewers', OTHER)).sort()).toEqual(files);
+    expect(markdownFiles(`reviewers/${OTHER}`)).toEqual(files);
   });
 
-  it('every file has the same structure, line for line', () => {
-    for (const f of files) {
-      expect(lineShape(read(`reviewers/${OTHER}/${f}`)), f).toEqual(lineShape(read(`reviewers/${BASE}/${f}`)));
-    }
+  it.each(files)('%s has the same structure, line for line', (f) => {
+    expect(lineShape(read(`reviewers/${OTHER}/${f}`))).toEqual(lineShape(read(`reviewers/${BASE}/${f}`)));
   });
 
-  it('the JSON contract examples have the same keys and enum values', () => {
-    const enumKeys = new Set(['reviewer', 'status', 'category', 'severity', 'confidence', 'ssot_direction', 'priority']);
-    for (const f of ['_reviewer-prompt.md', '_synthesis-prompt.md']) {
-      expect(contractSkeleton(jsonContract(read(`reviewers/${OTHER}/${f}`)), enumKeys), f)
-        .toEqual(contractSkeleton(jsonContract(read(`reviewers/${BASE}/${f}`)), enumKeys));
-    }
+  it.each(files)('%s names the same code tokens on every line', (f) => {
+    expect(codeTokensPerLine(read(`reviewers/${OTHER}/${f}`))).toEqual(codeTokensPerLine(read(`reviewers/${BASE}/${f}`)));
   });
 
-  it('the contract examples pass the validators the pipeline uses', () => {
-    for (const locale of [BASE, OTHER]) {
-      const reviewer = read(`reviewers/${locale}/_reviewer-prompt.md`).replaceAll('{{REVIEWER}}', 'docs_staleness');
-      expect(validateReviewerOutput(jsonContract(reviewer)).errors, locale).toEqual([]);
-      expect(validateSynthesisOutput(jsonContract(read(`reviewers/${locale}/_synthesis-prompt.md`))).errors, locale).toEqual([]);
-    }
+  it.each(['_reviewer-prompt.md', '_synthesis-prompt.md'])('%s: the JSON contract example has the same keys and enum values', (f) => {
+    expect(contractSkeleton(jsonContract(read(`reviewers/${OTHER}/${f}`))))
+      .toEqual(contractSkeleton(jsonContract(read(`reviewers/${BASE}/${f}`))));
   });
 
-  it('the reviewer prompt defines every allowed enum value', () => {
-    for (const locale of [BASE, OTHER]) {
-      const text = read(`reviewers/${locale}/_reviewer-prompt.md`);
-      for (const value of [...FINDING_CATEGORIES, ...SEVERITIES, ...SSOT_DIRECTIONS]) {
-        expect(text, `${locale}: ${value}`).toContain(`| \`${value}\` |`);
-      }
-    }
+  it.each(LOCALES)('%s: the contract examples pass the validators the pipeline uses', (locale) => {
+    const reviewer = read(`reviewers/${locale}/_reviewer-prompt.md`).replaceAll('{{REVIEWER}}', 'docs_staleness');
+    expect(validateReviewerOutput(jsonContract(reviewer)).errors).toEqual([]);
+    expect(validateSynthesisOutput(jsonContract(read(`reviewers/${locale}/_synthesis-prompt.md`))).errors).toEqual([]);
+  });
+
+  it.each(LOCALES)('%s: each enum table lists exactly the values in src/types.ts', (locale) => {
+    const tables = enumTables(read(`reviewers/${locale}/_reviewer-prompt.md`));
+    expect(Object.fromEntries(Object.entries(tables).map(([field, values]) => [field, sorted(values)]))).toEqual({
+      category: sorted(FINDING_CATEGORIES),
+      severity: sorted(SEVERITIES),
+      confidence: sorted(SEVERITIES), // Confidence shares Severity's domain (src/types.ts)
+      ssot_direction: sorted(SSOT_DIRECTIONS),
+    });
+  });
+
+  it.each(LOCALES.flatMap((locale) => rubrics.map((f) => `${locale}/${f}`)))('%s names only categories from src/types.ts', (rel) => {
+    const named = rubricCategories(read(`reviewers/${rel}`));
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.filter((c) => !(FINDING_CATEGORIES as readonly string[]).includes(c))).toEqual([]);
   });
 });
 
-describe('docs: fenced code blocks are byte-identical across locales', () => {
+describe('docs: locale file sets and fenced code blocks', () => {
   const LOCALES = ['zh-TW', 'zh-CN', 'ja', 'ko'];
-  const DOCS: Array<[base: string, name: string]> = [
-    ['README.md', 'README.md'],
-    ['docs/en/overview.md', 'overview.md'],
-    ['docs/en/design.md', 'design.md'],
-    ['docs/en/why-reusable-workflow.md', 'why-reusable-workflow.md'],
+  const ROOT_README = 'README.md'; // the English base of README lives at the repo root, not in docs/en
+  const baseDocs = markdownFiles('docs/en');
+  const pairs: Array<[name: string, base: string]> = [
+    [ROOT_README, ROOT_README],
+    ...baseDocs.map((name): [string, string] => [name, `docs/en/${name}`]),
   ];
 
-  it.each(DOCS)('%s', (base, name) => {
-    const expected = fencedBlocks(read(base));
-    for (const locale of LOCALES) {
-      expect(fencedBlocks(read(`docs/${locale}/${name}`)), `docs/${locale}/${name}`).toEqual(expected);
-    }
+  it('docs/en holds no README (the root README.md is the base)', () => {
+    expect(baseDocs).not.toContain(ROOT_README);
+  });
+
+  it.each(LOCALES)('docs/%s holds the same documents as the English base', (locale) => {
+    expect(markdownFiles(`docs/${locale}`)).toEqual(sorted([...baseDocs, ROOT_README]));
+  });
+
+  describe.each(pairs)('%s', (name, base) => {
+    it.each(LOCALES)('%s: fenced code blocks are byte-identical to the base', (locale) => {
+      expect(fencedBlocks(read(`docs/${locale}/${name}`))).toEqual(fencedBlocks(read(base)));
+    });
   });
 });

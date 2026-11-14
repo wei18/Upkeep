@@ -164,7 +164,7 @@ repo 有自己的标准时优先使用 repo 的。`convention` 几乎全靠 repo
 
 - `status`：`ok` 或 `failed`。失败的 reviewer 写出 `status: "failed"` 与 `findings: []`；不影响其他 reviewer。
 - `file`：主体文件。跨文件问题放在主体文件，其余文件列在 `related`。
-- `related`：其他相关文件，可为空。比对的另一方排在第一个。
+- `related`：其他相关文件，可为空。比对的另一方排在第一个。这个顺序只在 `findings/<reviewer>.json` 内有意义：Consolidate 会合并并重新排序 `related`，因此汇总后的报告不保留此顺序。
 - `category`：`staleness`、`duplicate`、`orphan`、`convention`、`inconsistency`、`i18n_sync`、`other` 之一。
 - `problem`：人类可读的问题描述。
 - `evidence`：支撑证据（git 时间、引用关系、具体不符之处）。
@@ -311,7 +311,7 @@ visual reviewer 多数工作不需「看」图：
 | 某 reviewer 挂掉、超时或写出不合法的输出 | 该 reviewer 的结果变为 `status:"failed"`、`findings:[]`（matrix `fail-fast: false`）；其余 reviewer 照常；报告与 issue 以「未完整运行」警告列出失败的 reviewer |
 | Synthesis step 失败 | 降级：Report 只呈现 raw findings（不含跨领域主题/叙事），不让整个 run 失败 |
 | 全部 reviewer 失败 | run 仍会完成：照常产出报告与 issue，内容没有 finding，「未完整运行」警告会列出每一位 reviewer |
-| Discovery 扫到 0 个文件 | 正常结束，留 log，非错误 |
+| Discovery 扫到 0 个文件 | 正常结束，非错误 |
 
 原则：Review/Synthesis 阶段子失败一律隔离降级；确定性骨架（Discovery/Consolidate/Report）失败才让整个 run fail。
 
